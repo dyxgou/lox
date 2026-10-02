@@ -12,8 +12,8 @@ type Token int
 
 const (
 	// Special tokens
-	ILLEGAL Token = iota
-	EOF
+	EOF Token = iota
+	ILLEGAL
 	COMMENT
 
 	literal_beg
