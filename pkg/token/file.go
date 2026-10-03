@@ -18,7 +18,7 @@ func (f *File) Init(name string, base, size int) {
 		name:  name,
 		base:  base,
 		size:  size,
-		lines: make([]int, 0, 50),
+		lines: make([]int, 1, 50),
 	}
 }
 
@@ -55,7 +55,7 @@ func (f *File) LineCount() int {
 // The line offset must be larger than the offset for the previous line
 // and smaller than the file size; otherwise the line offset is ignored.
 func (f *File) AddLine(offset int) {
-	if i := len(f.lines); f.lines[i-1] < offset && offset < f.size {
+	if i := len(f.lines); (i == 0 || f.lines[i-1] < offset) && offset < f.size {
 		f.lines = append(f.lines, offset)
 	}
 }

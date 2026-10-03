@@ -108,8 +108,8 @@ var source = func() []byte {
 	src := make([]byte, 0, 700)
 
 	for _, tok := range tokens {
-		src = append(src, []byte(tok.lit)...)
-		src = append(src, []byte(whiteSpace)...)
+		src = append(src, tok.lit...)
+		src = append(src, whiteSpace...)
 	}
 
 	return src
@@ -133,6 +133,10 @@ func TestNext(t *testing.T) {
 			name: "Hello world",
 			src:  []byte("hello world"),
 		},
+		{
+			name: "Lox tokens",
+			src:  source,
+		},
 	}
 
 	for _, tt := range tests {
@@ -141,6 +145,7 @@ func TestNext(t *testing.T) {
 			scanner.Init(&file, tt.src, nil)
 
 			for _, ch := range tt.src {
+
 				if ch != scanner.ch {
 					t.Fatalf("scanner next char expected=%q. got=%q", ch, scanner.ch)
 				}
