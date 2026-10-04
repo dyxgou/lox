@@ -50,6 +50,8 @@ func (s *Scanner) next() {
 		s.readPos++
 	} else {
 		s.pos = len(s.src)
+		s.readPos = len(s.src)
+
 		if s.ch == '\n' {
 			s.linePos = s.pos
 			s.file.AddLine(s.linePos)
@@ -72,6 +74,8 @@ func (s *Scanner) Scan() (pos token.Pos, tok token.Token, lit string) {
 		if len(lit) > 1 {
 			tok = token.Lookup(lit)
 		}
+	case isDecimal(ch) || s.ch == '.' && isDecimal(s.peek()):
+		tok, lit = s.scanNumber()
 	}
 
 	return
@@ -123,4 +127,42 @@ exit:
 	return string(s.src[pos:s.pos])
 }
 
+func (s *Scanner) scanNumber() (token.Token, string) {
+	pos := s.pos
+	tok := token.INT
+
+	if s.ch == '.' {
+		tok = token.FLOAT
+	}
+
+	for rdOffset, b := range s.src[s.readPos:] {
+		if isDecimal(b) {
+			continue
+		}
+
+		if b == '.' {
+			if tok == token.FLOAT {
+				tok = token.ILLEGAL
+				goto exit
+			}
+
+			tok = token.FLOAT
+			continue
+		}
+
+		if b == 'i' {
+			tok = token.IMAG
+			s.next()
+		}
+
+		s.readPos += rdOffset
+		s.next()
+		goto exit
+	}
+	s.pos = len(s.src)
+	s.readPos = len(s.src)
+	s.ch = eof
+
+exit:
+	return tok, string(s.src[pos:s.pos])
 }

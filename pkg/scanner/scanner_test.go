@@ -8,99 +8,101 @@ import (
 )
 
 type ExpTok struct {
-	tok token.Token
-	lit string
+	name string
+	lit  string
+	want string
+	tok  token.Token
 }
 
 var tokens = [...]ExpTok{
-	{token.COMMENT, "// Code Comment"},
-	{token.IDENT, "hello"},
-	{token.INT, "0"},
-	{token.INT, "1"},
-	{token.INT, "2"},
-	{token.INT, "3"},
-	{token.INT, "4"},
-	{token.INT, "5"},
-	{token.INT, "6"},
-	{token.INT, "7"},
-	{token.INT, "8"},
-	{token.INT, "9"},
-	{token.INT, "12345678910"},
-	{token.FLOAT, ".0"},
-	{token.FLOAT, "0."},
-	{token.FLOAT, "3.14159265"},
-	{token.IMAG, "0i"},
-	{token.IMAG, "1i"},
-	{token.IMAG, "2i"},
-	{token.IMAG, "3i"},
-	{token.IMAG, "4i"},
-	{token.IMAG, "5i"},
-	{token.IMAG, "6i"},
-	{token.IMAG, "7i"},
-	{token.IMAG, "8i"},
-	{token.IMAG, "9i"},
-	{token.IMAG, "12345678910i"},
-	{token.IMAG, ".0i"},
-	{token.IMAG, "0.i"},
-	{token.IMAG, "3.14159265i"},
-	{token.CHAR, "'a'"},
-	{token.STRING, "`Hello world`"},
+	{tok: token.COMMENT, lit: "// Code Comment"},
+	{tok: token.IDENT, lit: "hello"},
+	{tok: token.INT, lit: "0"},
+	{tok: token.INT, lit: "1"},
+	{tok: token.INT, lit: "2"},
+	{tok: token.INT, lit: "3"},
+	{tok: token.INT, lit: "4"},
+	{tok: token.INT, lit: "5"},
+	{tok: token.INT, lit: "6"},
+	{tok: token.INT, lit: "7"},
+	{tok: token.INT, lit: "8"},
+	{tok: token.INT, lit: "9"},
+	{tok: token.INT, lit: "12345678910"},
+	{tok: token.FLOAT, lit: ".0"},
+	{tok: token.FLOAT, lit: "0."},
+	{tok: token.FLOAT, lit: "3.14159265"},
+	{tok: token.IMAG, lit: "0i"},
+	{tok: token.IMAG, lit: "1i"},
+	{tok: token.IMAG, lit: "2i"},
+	{tok: token.IMAG, lit: "3i"},
+	{tok: token.IMAG, lit: "4i"},
+	{tok: token.IMAG, lit: "5i"},
+	{tok: token.IMAG, lit: "6i"},
+	{tok: token.IMAG, lit: "7i"},
+	{tok: token.IMAG, lit: "8i"},
+	{tok: token.IMAG, lit: "9i"},
+	{tok: token.IMAG, lit: "12345678910i"},
+	{tok: token.IMAG, lit: ".0i"},
+	{tok: token.IMAG, lit: "0.i"},
+	{tok: token.IMAG, lit: "3.14159265i"},
+	{tok: token.CHAR, lit: "'a'"},
+	{tok: token.STRING, lit: "`Hello world`"},
 
 	// Operators and delimiters
-	{token.ADD, "+"},
-	{token.SUB, "-"},
-	{token.MUL, "*"},
-	{token.QUO, "/"},
-	{token.REM, "%"},
+	{tok: token.ADD, lit: "+"},
+	{tok: token.SUB, lit: "-"},
+	{tok: token.MUL, lit: "*"},
+	{tok: token.QUO, lit: "/"},
+	{tok: token.REM, lit: "%"},
 
-	{token.AND, "&"},
-	{token.OR, "|"},
-	{token.XOR, "^"},
-	{token.SHL, "<<"},
-	{token.SHR, ">>"},
-	{token.AND_NOT, "&^"},
+	{tok: token.AND, lit: "&"},
+	{tok: token.OR, lit: "|"},
+	{tok: token.XOR, lit: "^"},
+	{tok: token.SHL, lit: "<<"},
+	{tok: token.SHR, lit: ">>"},
+	{tok: token.AND_NOT, lit: "&^"},
 
-	{token.ADD_ASSIGN, "+="},
-	{token.SUB_ASSIGN, "-="},
-	{token.MUL_ASSIGN, "*="},
-	{token.QUO_ASSIGN, "/="},
-	{token.REM_ASSIGN, "%="},
+	{tok: token.ADD_ASSIGN, lit: "+="},
+	{tok: token.SUB_ASSIGN, lit: "-="},
+	{tok: token.MUL_ASSIGN, lit: "*="},
+	{tok: token.QUO_ASSIGN, lit: "/="},
+	{tok: token.REM_ASSIGN, lit: "%="},
 
-	{token.AND_ASSIGN, "&="},
-	{token.OR_ASSIGN, "|="},
-	{token.XOR_ASSIGN, "^="},
-	{token.SHL_ASSIGN, "<<="},
-	{token.SHR_ASSIGN, ">>="},
-	{token.AND_NOT_ASSIGN, "&^="},
+	{tok: token.AND_ASSIGN, lit: "&="},
+	{tok: token.OR_ASSIGN, lit: "|="},
+	{tok: token.XOR_ASSIGN, lit: "^="},
+	{tok: token.SHL_ASSIGN, lit: "<<="},
+	{tok: token.SHR_ASSIGN, lit: ">>="},
+	{tok: token.AND_NOT_ASSIGN, lit: "&^="},
 
-	{token.LAND, "&&"},
-	{token.LOR, "||"},
-	{token.ARROW, "<-"},
-	{token.INC, "++"},
-	{token.DEC, "--"},
+	{tok: token.LAND, lit: "&&"},
+	{tok: token.LOR, lit: "||"},
+	{tok: token.ARROW, lit: "<-"},
+	{tok: token.INC, lit: "++"},
+	{tok: token.DEC, lit: "--"},
 
-	{token.EQL, "=="},
-	{token.LSS, "<"},
-	{token.GTR, ">"},
-	{token.ASSIGN, "="},
-	{token.NOT, "!"},
+	{tok: token.EQL, lit: "=="},
+	{tok: token.LSS, lit: "<"},
+	{tok: token.GTR, lit: ">"},
+	{tok: token.ASSIGN, lit: "="},
+	{tok: token.NOT, lit: "!"},
 
-	{token.NEQ, "!="},
-	{token.LEQ, "<="},
-	{token.GEQ, ">="},
-	{token.DEFINE, ":="},
+	{tok: token.NEQ, lit: "!="},
+	{tok: token.LEQ, lit: "<="},
+	{tok: token.GEQ, lit: ">="},
+	{tok: token.DEFINE, lit: ":="},
 
-	{token.LPAREN, "("},
-	{token.LBRACK, "["},
-	{token.LBRACE, "{"},
-	{token.COMMA, ","},
-	{token.PERIOD, "."},
+	{tok: token.LPAREN, lit: "("},
+	{tok: token.LBRACK, lit: "["},
+	{tok: token.LBRACE, lit: "{"},
+	{tok: token.COMMA, lit: ","},
+	{tok: token.PERIOD, lit: "."},
 
-	{token.RPAREN, ")"},
-	{token.RBRACK, "]"},
-	{token.RBRACE, "}"},
-	{token.SEMICOLON, ";"},
-	{token.COLON, ":"},
+	{tok: token.RPAREN, lit: ")"},
+	{tok: token.RBRACK, lit: "]"},
+	{tok: token.RBRACE, lit: "}"},
+	{tok: token.SEMICOLON, lit: ";"},
+	{tok: token.COLON, lit: ":"},
 }
 
 const whiteSpace = "	\t	\n\n\n"
@@ -175,12 +177,7 @@ var keywords = func() []keyword {
 }()
 
 func TestScanIdentAndKeywords(t *testing.T) {
-	tests := []struct {
-		name string
-		lit  string
-		want string
-		tok  token.Token
-	}{
+	tests := []ExpTok{
 		{
 			name: "Ident",
 			lit:  "foo",
@@ -220,12 +217,7 @@ func TestScanIdentAndKeywords(t *testing.T) {
 	}
 
 	for _, kwrd := range keywords {
-		tests = append(tests, struct {
-			name string
-			lit  string
-			want string
-			tok  token.Token
-		}{
+		tests = append(tests, ExpTok{
 			name: "Keyword: " + kwrd.lit,
 			lit:  kwrd.lit,
 			want: kwrd.lit,
@@ -246,6 +238,92 @@ func TestScanIdentAndKeywords(t *testing.T) {
 
 			if tok != tt.tok {
 				t.Errorf("scanIdentifier token expected=%q. got=%q", tt.tok.String(), tok.String())
+			}
+		})
+	}
+}
+
+func TestNumberInt(t *testing.T) {
+	tests := []ExpTok{
+		{
+			name: "Int",
+			lit:  "1234",
+			want: "1234",
+			tok:  token.INT,
+		},
+		{
+			name: "Int with spaces",
+			lit:  "1234    ",
+			want: "1234",
+			tok:  token.INT,
+		},
+		{
+			name: "Float",
+			lit:  "1234.1234",
+			want: "1234.1234",
+			tok:  token.FLOAT,
+		},
+		{
+			name: "Float With Spaces",
+			lit:  "    1234.1234     ",
+			want: "1234.1234",
+			tok:  token.FLOAT,
+		},
+		{
+			name: "Float Repeated Dot",
+			lit:  "1234..1234",
+			tok:  token.ILLEGAL,
+		},
+		{
+			name: "Float dot at end",
+			lit:  "1234.",
+			want: "1234.",
+			tok:  token.FLOAT,
+		},
+		{
+			name: "Float dot at start",
+			lit:  ".1234",
+			want: ".1234",
+			tok:  token.FLOAT,
+		},
+		{
+			name: "Imag",
+			lit:  "1234i",
+			want: "1234i",
+			tok:  token.IMAG,
+		},
+		{
+			name: "Imag with spaces",
+			lit:  "	  1234i     ",
+			want: "1234i",
+			tok:  token.IMAG,
+		},
+		{
+			name: "Imag float",
+			lit:  "1234.1234i",
+			want: "1234.1234i",
+			tok:  token.IMAG,
+		},
+		{
+			name: "Imag float with spaces",
+			lit:  "    	1234.1234i    ",
+			want: "1234.1234i",
+			tok:  token.IMAG,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			file.Init(tt.lit, defaultBase, len(tt.lit))
+			scanner.Init(&file, []byte(tt.lit), nil)
+
+			_, tok, lit := scanner.Scan()
+			if tok != tt.tok {
+				t.Errorf("scanNumber token expected=%q. got=%q", tt.tok.String(), tok.String())
+			}
+
+			if tok != token.ILLEGAL && lit != tt.want {
+				t.Errorf("scanNumber literal expected=%q. got=%q", tt.want, lit)
 			}
 		})
 	}
