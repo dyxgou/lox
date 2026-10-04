@@ -55,11 +55,10 @@ const (
 	SHR_ASSIGN     // >>=
 	AND_NOT_ASSIGN // &^=
 
-	LAND  // &&
-	LOR   // ||
-	ARROW // <-
-	INC   // ++
-	DEC   // --
+	LAND // &&
+	LOR  // ||
+	INC  // ++
+	DEC  // --
 
 	EQL    // ==
 	LSS    // <
@@ -107,9 +106,9 @@ const (
 )
 
 var tokens = [...]string{
-	ILLEGAL: "ILLEGAL",
+	EOF: "EOF",
 
-	EOF:     "EOF",
+	ILLEGAL: "ILLEGAL",
 	COMMENT: "COMMENT",
 
 	IDENT:  "IDENT",
@@ -145,11 +144,10 @@ var tokens = [...]string{
 	SHR_ASSIGN:     ">>=",
 	AND_NOT_ASSIGN: "&^=",
 
-	LAND:  "&&",
-	LOR:   "||",
-	ARROW: "<-",
-	INC:   "++",
-	DEC:   "--",
+	LAND: "&&",
+	LOR:  "||",
+	INC:  "++",
+	DEC:  "--",
 
 	EQL:    "==",
 	LSS:    "<",

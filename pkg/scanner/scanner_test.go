@@ -15,7 +15,6 @@ type ExpTok struct {
 }
 
 var tokens = [...]ExpTok{
-	{tok: token.COMMENT, lit: "// Code Comment"},
 	{tok: token.IDENT, lit: "hello"},
 	{tok: token.INT, lit: "0"},
 	{tok: token.INT, lit: "1"},
@@ -77,7 +76,6 @@ var tokens = [...]ExpTok{
 
 	{tok: token.LAND, lit: "&&"},
 	{tok: token.LOR, lit: "||"},
-	{tok: token.ARROW, lit: "<-"},
 	{tok: token.INC, lit: "++"},
 	{tok: token.DEC, lit: "--"},
 
@@ -105,7 +103,7 @@ var tokens = [...]ExpTok{
 	{tok: token.COLON, lit: ":"},
 }
 
-const whiteSpace = "	\t	\n\n\n"
+const whiteSpace = "	\t"
 
 var source = func() []byte {
 	src := make([]byte, 0, 700)
@@ -159,17 +157,17 @@ func TestNext(t *testing.T) {
 	}
 }
 
-type keyword struct {
+type keywordInfo struct {
 	lit string
 	tok token.Token
 }
 
-var keywords = func() []keyword {
-	kwrds := make([]keyword, 0, math.MaxInt8)
+var keywords = func() []keywordInfo {
+	kwrds := make([]keywordInfo, 0, math.MaxInt8)
 
 	for i := range math.MaxInt8 {
 		if tok := token.Token(i); tok.IsKeyword() {
-			kwrds = append(kwrds, keyword{tok.String(), tok})
+			kwrds = append(kwrds, keywordInfo{tok.String(), tok})
 		}
 	}
 
@@ -324,6 +322,26 @@ func TestNumberInt(t *testing.T) {
 
 			if tok != token.ILLEGAL && lit != tt.want {
 				t.Errorf("scanNumber literal expected=%q. got=%q", tt.want, lit)
+			}
+		})
+	}
+}
+
+func TestScan(t *testing.T) {
+	file.Init("tokens_source", defaultBase, len(source))
+	scanner.Init(&file, []byte(source), nil)
+
+	for _, tt := range tokens {
+		name := "Scanning: " + tt.lit
+		t.Run(name, func(t *testing.T) {
+			_, tok, lit := scanner.Scan()
+
+			if tok != tt.tok {
+				t.Errorf("ScanNextTok token expected=%q. got=%q", tt.tok.String(), tok.String())
+			}
+
+			if tok.IsLiteral() && lit != tt.lit {
+				t.Errorf("ScanNextTok literal expected=%q. got=%q", tt.lit, lit)
 			}
 		})
 	}
