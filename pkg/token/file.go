@@ -1,6 +1,8 @@
 package token
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // File is a representation of a Lox File within a [FileSet]. A File has a
 // name, base, size and line offset table which is composed of the offsets of
@@ -81,4 +83,13 @@ func (f *File) SetLinesForContent(content []byte) {
 			nlPos = offset + 1
 		}
 	}
+}
+
+// fixOffset fixes and out-of-bound offset so that 0 <= offset <= f.file
+func (f *File) fixPos(pos int) int {
+	return max(min(f.size, pos), 0)
+}
+
+func (f *File) Pos(pos int) Pos {
+	return Pos(f.base + f.fixPos(pos))
 }

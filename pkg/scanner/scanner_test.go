@@ -1,6 +1,7 @@
 package scanner
 
 import (
+	"math"
 	"testing"
 
 	"github.com/dyxgou/lox/pkg/token"
@@ -151,6 +152,100 @@ func TestNext(t *testing.T) {
 				}
 
 				scanner.next()
+			}
+		})
+	}
+}
+
+type keyword struct {
+	lit string
+	tok token.Token
+}
+
+var keywords = func() []keyword {
+	kwrds := make([]keyword, 0, math.MaxInt8)
+
+	for i := range math.MaxInt8 {
+		if tok := token.Token(i); tok.IsKeyword() {
+			kwrds = append(kwrds, keyword{tok.String(), tok})
+		}
+	}
+
+	return kwrds
+}()
+
+func TestScanIdentAndKeywords(t *testing.T) {
+	tests := []struct {
+		name string
+		lit  string
+		want string
+		tok  token.Token
+	}{
+		{
+			name: "Ident",
+			lit:  "foo",
+			want: "foo",
+			tok:  token.IDENT,
+		},
+		{
+			name: "Single letter ident",
+			lit:  "a",
+			want: "a",
+			tok:  token.IDENT,
+		},
+		{
+			name: "Single letter ident with spaces",
+			lit:  "a    ",
+			want: "a",
+			tok:  token.IDENT,
+		},
+		{
+			name: "Ident with Spaces",
+			lit:  "foo     ",
+			want: "foo",
+			tok:  token.IDENT,
+		},
+		{
+			name: "Ident with Nums",
+			lit:  "foo123",
+			want: "foo123",
+			tok:  token.IDENT,
+		},
+		{
+			name: "Ident with Nums and letters",
+			lit:  "foo123bar",
+			want: "foo123bar",
+			tok:  token.IDENT,
+		},
+	}
+
+	for _, kwrd := range keywords {
+		tests = append(tests, struct {
+			name string
+			lit  string
+			want string
+			tok  token.Token
+		}{
+			name: "Keyword: " + kwrd.lit,
+			lit:  kwrd.lit,
+			want: kwrd.lit,
+			tok:  kwrd.tok,
+		})
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			file.Init(tt.lit, defaultBase, len(tt.lit))
+			scanner.Init(&file, []byte(tt.lit), nil)
+
+			_, tok, lit := scanner.Scan()
+
+			if lit != tt.want {
+				t.Errorf("scanIdentifier literal expected=%q. got=%q", tt.want, lit)
+			}
+
+			if tok != tt.tok {
+				t.Errorf("scanIdentifier token expected=%q. got=%q", tt.tok.String(), tok.String())
 			}
 		})
 	}
