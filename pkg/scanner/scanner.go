@@ -3,12 +3,11 @@ package scanner
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/dyxgou/lox/pkg/token"
 )
 
-type ErrorHandler func(pos token.Pos, msg string)
+type ErrorHandler func(pos token.Position, msg string)
 
 type Scanner struct {
 	file *token.File
@@ -37,6 +36,16 @@ func (s *Scanner) Init(file *token.File, src []byte, err ErrorHandler) {
 	}
 
 	s.next()
+}
+
+func (s *Scanner) error(pos int, msg string) {
+	if s.err != nil {
+		s.err(s.file.Position(s.file.Pos(pos)), msg)
+	}
+}
+
+func (s *Scanner) errorf(pos int, format string, args ...any) {
+	s.error(pos, fmt.Sprintf(format, args...))
 }
 
 func (s *Scanner) next() {
@@ -312,7 +321,7 @@ func (s *Scanner) scanChar() string {
 	for {
 		ch := s.ch
 		if ch == '\n' || ch == eof {
-			log.Fatalf("char quote never closed at pos=%d", pos+len)
+			s.errorf(s.pos, "char quote never closed at pos=%d", pos+len)
 		}
 
 		s.next()
@@ -334,7 +343,7 @@ func (s *Scanner) scanRawString() string {
 		ch := s.ch
 
 		if ch == eof {
-			log.Fatalf("raw string reached eof at=%d", s.pos)
+			s.errorf(s.pos, "raw string reached eof at=%d", s.pos)
 		}
 
 		s.next()

@@ -2,6 +2,7 @@ package token
 
 import (
 	"fmt"
+	"slices"
 )
 
 // File is a representation of a Lox File within a [FileSet]. A File has a
@@ -85,11 +86,44 @@ func (f *File) SetLinesForContent(content []byte) {
 	}
 }
 
-// fixOffset fixes and out-of-bound offset so that 0 <= offset <= f.file
+// fixPos and out-of-bound offset so that 0 <= pos <= f.file
 func (f *File) fixPos(pos int) int {
 	return max(min(f.size, pos), 0)
 }
 
 func (f *File) Pos(pos int) Pos {
 	return Pos(f.base + f.fixPos(pos))
+}
+
+func (f *File) unpack(pos int) (filename string, line, column int) {
+	filename = f.name
+
+	i, ok := slices.BinarySearch(f.lines, pos)
+
+	if ok {
+		line, column = i+1, pos-f.lines[i]+1
+	}
+
+	if i > len(f.lines)-1 {
+		last := f.lines[len(f.lines)-1]
+		line, column = i, pos-last+1
+	}
+
+	return
+}
+
+func (f *File) position(pos Pos) (p Position) {
+	offst := f.fixPos(int(pos) - f.base)
+	p.Offset = offst
+	p.Filename, p.Line, p.Column = f.unpack(offst)
+
+	return
+}
+
+func (f *File) Position(p Pos) (pos Position) {
+	if p != NoPos {
+		pos = f.position(p)
+	}
+
+	return
 }
