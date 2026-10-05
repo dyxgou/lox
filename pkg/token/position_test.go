@@ -18,7 +18,8 @@ func TestSetLinesForContent(t *testing.T) {
 		{name: "ABC2", content: []byte("a\nb\nc"), lines: []int{0, 2, 4}},
 		{name: "ABC3", content: []byte("a\nb\nc\nd\ne"), lines: []int{0, 2, 4, 6, 8}},
 		{name: "Mult New Lines", content: []byte("a\n\nb"), lines: []int{0, 3}},
-		{name: "Package1", content: []byte("print 'hello world'\n"), lines: []int{0}},
+		{name: "print", content: []byte("print 'hello world'\n"), lines: []int{0}},
+		{name: "print multiple newlines", content: []byte("print 'hello world'\n\n\n"), lines: []int{0}},
 		{
 			name:    "Package2",
 			content: []byte("print 'hello world';\nprint 'world hello'\n"),

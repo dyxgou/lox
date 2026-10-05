@@ -103,7 +103,7 @@ var tokens = [...]ExpTok{
 	{tok: token.COLON, lit: ":"},
 }
 
-const whiteSpace = "	\t"
+const whiteSpace = "	\t\n\n\n"
 
 var source = func() []byte {
 	src := make([]byte, 0, 700)
@@ -327,14 +327,21 @@ func TestNumberInt(t *testing.T) {
 	}
 }
 
-func TestScan(t *testing.T) {
+func TestScanSource(t *testing.T) {
 	file.Init("tokens_source", defaultBase, len(source))
 	scanner.Init(&file, []byte(source), nil)
 
+	lastPos := 0
 	for _, tt := range tokens {
 		name := "Scanning: " + tt.lit
 		t.Run(name, func(t *testing.T) {
-			_, tok, lit := scanner.Scan()
+			pos, tok, lit := scanner.Scan()
+
+			for tok == token.SEMICOLON && lit == "\n" {
+				pos, tok, lit = scanner.Scan()
+			}
+
+			expPos := indexFrom(source, tt.lit[0], lastPos) + 1
 
 			if tok != tt.tok {
 				t.Errorf("ScanNextTok token expected=%q. got=%q", tt.tok.String(), tok.String())
@@ -343,6 +350,26 @@ func TestScan(t *testing.T) {
 			if tok.IsLiteral() && lit != tt.lit {
 				t.Errorf("ScanNextTok literal expected=%q. got=%q", tt.lit, lit)
 			}
+
+			if expPos == -1 {
+				t.Fatalf("ScanNextTok lit=%q not found.", tt.lit)
+			}
+
+			if int(pos) != expPos {
+				t.Fatalf("ScanNextTok pos expected=%d. got=%d", expPos, pos)
+			}
+
+			lastPos = int(pos) + len(whiteSpace)
 		})
 	}
+}
+
+func indexFrom(src []byte, x byte, start int) int {
+	for i := start; i < len(src); i++ {
+		if src[i] == x {
+			return i
+		}
+	}
+
+	return -1
 }
