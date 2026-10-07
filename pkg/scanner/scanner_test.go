@@ -327,6 +327,31 @@ func TestNumberInt(t *testing.T) {
 	}
 }
 
+func TestScanComments(t *testing.T) {
+	tt := struct {
+		src []byte
+		tok token.Token
+		lit string
+	}{
+		src: []byte("// Lox comment"),
+		tok: token.COMMENT,
+		lit: " Lox comment",
+	}
+
+	file.Init("comment", 1, len(tt.src))
+	scanner.Init(&file, tt.src, nil)
+
+	_, tok, lit := scanner.Scan()
+
+	if tok != tt.tok {
+		t.Errorf("TestScanComment tok expected=%q. got=%q", tt.tok, tok)
+	}
+
+	if lit != tt.lit {
+		t.Errorf("TestScanComment literal expected=%q. got=%q", tt.lit, lit)
+	}
+}
+
 func TestScanSource(t *testing.T) {
 	file.Init("tokens_source", defaultBase, len(source))
 	scanner.Init(&file, []byte(source), nil)

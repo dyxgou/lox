@@ -94,6 +94,13 @@ func (s *Scanner) Scan() (pos token.Pos, tok token.Token, lit string) {
 			tok = token.EOF
 		case '\n':
 			return pos, token.SEMICOLON, "\n"
+		case '/':
+			if s.ch == '/' {
+				tok = token.COMMENT
+				lit = s.scanComment()
+				return
+			}
+			tok = s.switch2(token.QUO, token.QUO_ASSIGN)
 		case '"':
 			tok = token.STRING
 			// TODO(scanner): implement scan string
@@ -130,8 +137,6 @@ func (s *Scanner) Scan() (pos token.Pos, tok token.Token, lit string) {
 			tok = s.switch3(token.SUB, token.SUB_ASSIGN, '-', token.DEC)
 		case '*':
 			tok = s.switch2(token.MUL, token.MUL_ASSIGN)
-		case '/':
-			tok = s.switch2(token.QUO, token.QUO_ASSIGN)
 		case '%':
 			tok = s.switch2(token.REM, token.REM_ASSIGN)
 		case '&':
@@ -351,6 +356,20 @@ func (s *Scanner) scanRawString() string {
 			break
 		}
 	}
+
+	return string(s.src[pos:s.pos])
+}
+
+func (s *Scanner) scanComment() string {
+	// '//' already consumed
+	s.next()
+	pos := s.pos
+
+	for s.ch != eof && s.ch != '\n' {
+		s.next()
+	}
+
+	s.next()
 
 	return string(s.src[pos:s.pos])
 }
