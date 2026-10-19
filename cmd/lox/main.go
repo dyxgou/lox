@@ -1,9 +1,8 @@
 package main
 
 import (
-	"bufio"
+	"fmt"
 	"log"
-	"log/slog"
 	"os"
 	"path/filepath"
 )
@@ -31,16 +30,18 @@ func main() {
 		log.Fatalf("failed to open lox file: %s", err)
 	}
 
-	defer file.Close()
+	buf := make([]byte, 1024*10)
+	n, err := file.Read(buf)
 
-	scanner := bufio.NewScanner(file)
-
-	for scanner.Scan() {
-		line := scanner.Text()
-		slog.Info("lox line", "l", line)
-	}
-
-	if err := scanner.Err(); err != nil {
+	if err != nil {
 		log.Fatalf("error reading file: %s", err)
 	}
+
+	if n > cap(buf) {
+		log.Fatalf("file buffer overflow. maxcap=%d. got=%d", cap(buf), n)
+	}
+
+	defer file.Close()
+
+	fmt.Println(string(buf))
 }

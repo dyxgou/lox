@@ -86,7 +86,7 @@ func (f *File) SetLinesForContent(content []byte) {
 	}
 }
 
-// fixPos and out-of-bound offset so that 0 <= pos <= f.file
+// fixPos and out-of-bound offset so that 0 <= pos <= f.size
 func (f *File) fixPos(pos int) int {
 	return max(min(f.size, pos), 0)
 }

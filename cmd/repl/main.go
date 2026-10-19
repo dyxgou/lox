@@ -4,33 +4,42 @@ import (
 	"bufio"
 	"fmt"
 	"log"
-	"log/slog"
 	"os"
+
+	"github.com/dyxgou/lox/pkg/scanner"
+	"github.com/dyxgou/lox/pkg/token"
 )
 
 const prompt = ">> "
 
 func main() {
-	scanner := bufio.NewScanner(os.Stdin)
+	scn := bufio.NewScanner(os.Stdin)
+	var file token.File
+	var s scanner.Scanner
 
+outter:
 	for {
 		fmt.Print(prompt)
 
-		if !scanner.Scan() {
+		if !scn.Scan() {
 			return
 		}
 
-		line := scanner.Text()
+		buf := scn.Bytes()
 
-		if line == "" || line == "exit" {
-			slog.Info("exiting from repl")
-			break
+		file.Init("repl", 1, len(buf))
+		s.Init(&file, buf, nil)
+
+		for pos, tok, lit := s.Scan(); tok != token.EOF; pos, tok, lit = s.Scan() {
+			if lit == "exit" {
+				break outter
+			}
+
+			fmt.Printf("%q: %s: %d\n", tok.String(), lit, pos)
 		}
-
-		fmt.Println("<<", line)
 	}
 
-	if err := scanner.Err(); err != nil {
+	if err := scn.Err(); err != nil {
 		log.Fatalf("Error scanning lox: %v", err)
 	}
 }
