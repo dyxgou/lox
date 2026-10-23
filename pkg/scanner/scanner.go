@@ -103,10 +103,10 @@ func (s *Scanner) Scan() (pos token.Pos, tok token.Token, lit string) {
 			tok = s.switch2(token.QUO, token.QUO_ASSIGN)
 		case '"':
 			tok = token.STRING
-			// TODO(scanner): implement scan string
+			lit = s.scanRawString('"')
 		case '`':
 			tok = token.STRING
-			lit = s.scanRawString()
+			lit = s.scanRawString('`')
 		case '\'':
 			tok = token.CHAR
 			lit = s.scanChar()
@@ -340,7 +340,7 @@ func (s *Scanner) scanChar() string {
 	return string(s.src[pos:s.pos])
 }
 
-func (s *Scanner) scanRawString() string {
+func (s *Scanner) scanRawString(qoute byte) string {
 	// char '`' already consumed
 	pos := s.pos - 1
 
@@ -352,7 +352,7 @@ func (s *Scanner) scanRawString() string {
 		}
 
 		s.next()
-		if ch == '`' {
+		if ch == qoute {
 			break
 		}
 	}
