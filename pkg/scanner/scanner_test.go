@@ -15,6 +15,10 @@ type ExpTok struct {
 }
 
 var tokens = [...]ExpTok{
+	{tok: token.PACKAGE, lit: "package"},
+	{tok: token.IDENT, lit: "main"},
+	{tok: token.IMPORT, lit: "import"},
+	{tok: token.STRING, lit: "\"importedPackage\""},
 	{tok: token.IDENT, lit: "hello"},
 	{tok: token.INT, lit: "0"},
 	{tok: token.INT, lit: "1"},

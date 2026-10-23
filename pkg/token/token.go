@@ -86,6 +86,9 @@ const (
 
 	keyword_beg
 	// Keywords
+	PACKAGE
+	IMPORT
+
 	BREAK
 	CASE
 	CONST
@@ -171,6 +174,9 @@ var tokens = [...]string{
 	RBRACE:    "}",
 	SEMICOLON: ";",
 	COLON:     ":",
+
+	PACKAGE: "package",
+	IMPORT:  "import",
 
 	BREAK:    "break",
 	CASE:     "case",
