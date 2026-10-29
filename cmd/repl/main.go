@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"log"
+	"log/slog"
 	"os"
 
 	"github.com/dyxgou/lox/pkg/scanner"
@@ -32,6 +33,7 @@ outter:
 
 		for pos, tok, lit := s.Scan(); tok != token.EOF; pos, tok, lit = s.Scan() {
 			if lit == "exit" {
+				slog.Info("exiting from REPL")
 				break outter
 			}
 
