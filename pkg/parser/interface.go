@@ -5,13 +5,13 @@ import (
 	"github.com/dyxgou/lox/pkg/token"
 )
 
-func ParseFile(file *token.File, src []byte) (*ast.File, error) {
+func ParseFile(file *token.File, src []byte, mode Mode) (*ast.File, error) {
 	if file == nil {
 		panic("parser.ParseFile: no token.File provided (file == nil)")
 	}
 
 	var p parser
-	p.init(file, src)
+	p.init(file, src, mode)
 
 	f, err := p.parseFile()
 	if err != nil {
@@ -22,4 +22,14 @@ func ParseFile(file *token.File, src []byte) (*ast.File, error) {
 	f.FileEnd = file.End()
 
 	return f, nil
+}
+
+func ParseExpr(src []byte, mode Mode) ast.Expr {
+	var file token.File
+	file.Init("expr", 1, len(src))
+
+	var p parser
+	p.init(&file, src, mode)
+
+	return p.parseExpr()
 }

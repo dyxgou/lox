@@ -19,20 +19,66 @@ type parser struct {
 	errors  scanner.ErrorList
 	scanner scanner.Scanner
 
+	// tracing and modes
+	trace  bool
+	indent int
+	mode   Mode
+
 	// nextTok
 	pos token.Pos
 	tok token.Token
 	lit string
 }
 
-func (p *parser) init(file *token.File, src []byte) {
+type Mode byte
+
+const (
+	TraceMode Mode = 1 << iota
+	SkipPackage
+)
+
+func (p *parser) init(file *token.File, src []byte, mode Mode) {
 	p.file = file
 	eh := func(pos token.Position, msg string) {
 		p.errors.Add(pos, msg)
 	}
 
+	p.mode = mode
+	p.trace = mode&TraceMode == 1
+
 	p.scanner.Init(p.file, src, eh)
 	p.next()
+}
+
+func (p *parser) printTrace(a ...any) {
+	const dots = ". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . "
+	const n = len(dots)
+	pos := p.file.Position(p.pos)
+	fmt.Printf("%5d:%3d: ", pos.Line, pos.Column)
+	i := 2 * p.indent
+	for i > n {
+		fmt.Print(dots)
+		i -= n
+	}
+	// i <= n
+	fmt.Print(dots[0:i])
+	fmt.Print(a...)
+	if len(a) > 1 {
+		fmt.Printf("tok=%q : lit=%q", p.tok.String(), p.lit)
+	}
+	fmt.Println()
+}
+
+func trace(p *parser, msg string) *parser {
+	p.printTrace(msg, "(")
+	p.indent++
+	return p
+}
+
+// Usage pattern: defer un(trace(p, "..."))
+func un(p *parser) {
+	p.indent--
+	p.printTrace(")")
 }
 
 func (p *parser) next() {
@@ -40,21 +86,26 @@ func (p *parser) next() {
 }
 
 func (p *parser) parseFile() (*ast.File, error) {
+	if p.trace {
+		defer un(trace(p, "file"))
+	}
 	if p.errors.Len() != 0 {
 		return nil, ErrScanFailed
 	}
 
-	p.expect(token.PACKAGE)
-	ident := p.parseIdent()
+	if p.mode&SkipPackage == 0 {
+		p.expect(token.PACKAGE)
+		ident := p.parseIdent()
 
-	if ident.Name == "_" {
-		p.error(p.pos, "invalid package name '_'")
-	}
-	p.expectSemi()
+		if ident.Name == "_" {
+			p.error(p.pos, "invalid package name '_'")
+		}
+		p.expectSemi()
 
-	if p.errors.Len() != 0 {
-		slog.Error("error parsing", "e", p.errors[0].Error())
-		return nil, errors.New("failed parsing package notation")
+		if p.errors.Len() != 0 {
+			slog.Error("error parsing", "e", p.errors[0].Error())
+			return nil, errors.New("failed parsing package notation")
+		}
 	}
 
 	decls := make([]ast.Decl, 0, 10)
@@ -82,6 +133,10 @@ func (p *parser) parseFile() (*ast.File, error) {
 }
 
 func (p *parser) parseDecl() ast.Decl {
+	if p.trace {
+		defer un(trace(p, "Declaration"))
+	}
+
 	switch p.tok {
 	case token.FUNC:
 		return p.parseFuncDecl()
@@ -94,6 +149,10 @@ func (p *parser) parseDecl() ast.Decl {
 }
 
 func (p *parser) parseFuncDecl() *ast.FuncDecl {
+	if p.trace {
+		defer un(trace(p, "Func Decl"))
+	}
+
 	pos := p.expect(token.FUNC)
 
 	ident := p.parseIdent()
@@ -115,6 +174,10 @@ func (p *parser) parseFuncDecl() *ast.FuncDecl {
 }
 
 func (p *parser) parseParameters() *ast.FieldList {
+	if p.trace {
+		defer un(trace(p, "Parameters"))
+	}
+
 	if p.tok == token.LPAREN {
 		lparen := p.expect(token.LPAREN)
 
@@ -129,6 +192,10 @@ func (p *parser) parseParameters() *ast.FieldList {
 }
 
 func (p *parser) parseParametersList(closing token.Token) []*ast.Field {
+	if p.trace {
+		defer un(trace(p, "Param List"))
+	}
+
 	params := make([]*ast.Field, 0, 5)
 
 	for p.tok != closing && p.tok != token.EOF {
@@ -158,6 +225,10 @@ func (p *parser) parseParametersList(closing token.Token) []*ast.Field {
 }
 
 func (p *parser) parseTypeList() *ast.FieldList {
+	if p.trace {
+		defer un(trace(p, "Type List"))
+	}
+
 	typs := make([]*ast.Field, 0, 1)
 
 	if p.tok == token.LPAREN {
@@ -219,6 +290,10 @@ func (p *parser) atComma(context string, follow token.Token) bool {
 }
 
 func (p *parser) parseType() ast.Expr {
+	if p.trace {
+		defer un(trace(p, "Type"))
+	}
+
 	typ := p.tryIdentOrType()
 
 	if typ == nil {
@@ -240,6 +315,10 @@ func (p *parser) tryIdentOrType() (typ ast.Expr) {
 }
 
 func (p *parser) parseBody() *ast.BlockStmt {
+	if p.trace {
+		defer un(trace(p, "Body"))
+	}
+
 	lbrace := p.expect(token.LBRACE)
 	list := p.parseStmtList()
 	rbrace := p.expect(token.RBRACE)
@@ -248,6 +327,10 @@ func (p *parser) parseBody() *ast.BlockStmt {
 }
 
 func (p *parser) parseStmtList() []ast.Stmt {
+	if p.trace {
+		defer un(trace(p, "Stmt List"))
+	}
+
 	list := make([]ast.Stmt, 0, 10)
 
 	switch p.tok {
@@ -257,6 +340,10 @@ func (p *parser) parseStmtList() []ast.Stmt {
 }
 
 func (p *parser) parseIdent() *ast.Ident {
+	if p.trace {
+		defer un(trace(p, "Ident"))
+	}
+
 	pos := p.pos
 	name := "_"
 
