@@ -1,5 +1,5 @@
 // Package token defines constants representing the lexical tokens of the Lox
-// programming language and basic operations on tokens (printing, predicates).
+// programming language and basic operations on tokens (printing, predicates, precedence).
 package token
 
 import (
@@ -210,6 +210,31 @@ func (tok Token) String() string {
 	}
 
 	return sb.String()
+}
+
+// Precedence
+
+const (
+	LowestPrec  = 0
+	UnaryPrec   = 6
+	HighestPrec = 7
+)
+
+func (op Token) Precedence() int {
+	switch op {
+	case LOR:
+		return 1
+	case LAND:
+		return 2
+	case EQL, NEQ, LSS, LEQ, GTR, GEQ:
+		return 3
+	case ADD, SUB, OR, XOR:
+		return 4
+	case MUL, QUO, REM, SHL, SHR, AND, AND_NOT:
+		return 5
+	}
+
+	return LowestPrec
 }
 
 var keywords map[string]Token

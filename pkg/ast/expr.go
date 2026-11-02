@@ -25,6 +25,31 @@ type (
 		Name    string
 		NamePos token.Pos
 	}
+
+	UnaryExpr struct {
+		OpPos token.Pos
+		Op    token.Token
+		X     Expr
+	}
+
+	BinaryExpr struct {
+		X     Expr
+		OpPos token.Pos
+		Op    token.Token
+		Y     Expr
+	}
+
+	PtrExpr struct {
+		Star token.Pos
+		X    Expr
+	}
+
+	BasicLit struct {
+		ValuePos token.Pos
+		Kind     token.Token
+		Value    string
+		ValueEnd token.Pos
+	}
 )
 
 func (e *BadExpr) Pos() token.Pos { return e.From }
@@ -38,14 +63,30 @@ func NewIdent(name string) *Ident { return &Ident{Name: name, NamePos: token.NoP
 func (e *File) Pos() token.Pos { return e.FileStart }
 func (e *File) End() token.Pos { return e.FileEnd }
 
-func (e *File) exprNode()    {}
-func (e *Ident) exprNode()   {}
-func (e *BadExpr) exprNode() {}
+func (e *UnaryExpr) Pos() token.Pos { return e.OpPos }
+func (e *UnaryExpr) End() token.Pos { return e.X.End() }
+
+func (e *BinaryExpr) Pos() token.Pos { return e.X.Pos() }
+func (e *BinaryExpr) End() token.Pos { return e.Y.End() }
+
+func (e *PtrExpr) Pos() token.Pos { return e.Star }
+func (e *PtrExpr) End() token.Pos { return e.X.End() }
+
+func (e *BasicLit) Pos() token.Pos { return e.ValuePos }
+func (e *BasicLit) End() token.Pos { return e.ValueEnd }
+
+func (*File) exprNode()       {}
+func (*Ident) exprNode()      {}
+func (*BadExpr) exprNode()    {}
+func (*UnaryExpr) exprNode()  {}
+func (*BinaryExpr) exprNode() {}
+func (*PtrExpr) exprNode()    {}
+func (*BasicLit) exprNode()   {}
 
 func (e *File) String() string {
 	var buf bytes.Buffer
 
-	ast.Fprint(&buf, tok.NewFileSet(), e, ast.NotNilFilter)
+	ast.Fprint(&buf, tok.NewFileSet(), e, nil)
 
 	return buf.String()
 }

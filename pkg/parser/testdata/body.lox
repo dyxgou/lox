@@ -1,0 +1,10 @@
+func main() { age := 20 }
+
+func main() {
+  age := 20
+  name := "Aleksey"
+  bTrue := true
+  bFalse := false
+
+  sum := 1 + 2
+}

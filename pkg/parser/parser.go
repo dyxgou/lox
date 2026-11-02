@@ -28,6 +28,13 @@ type parser struct {
 	pos token.Pos
 	tok token.Token
 	lit string
+
+	// nestLev is used to track the depth level in the recursion parsing
+	nestLev int
+
+	// sync
+	syncPos token.Pos // reached position when advance()
+	syncCnt int       // C'nt call to advance without making progress
 }
 
 type Mode byte
@@ -85,10 +92,45 @@ func (p *parser) next() {
 	p.pos, p.tok, p.lit = p.scanner.Scan()
 }
 
+var declStart = map[token.Token]bool{
+	token.IMPORT: true,
+	token.CONST:  true,
+	token.VAR:    true,
+}
+
+var stmtStart = map[token.Token]bool{
+	token.BREAK:    true,
+	token.CONST:    true,
+	token.CONTINUE: true,
+	token.FOR:      true,
+	token.IF:       true,
+	token.RETURN:   true,
+	token.SWITCH:   true,
+	token.VAR:      true,
+}
+
+func (p *parser) advance(tm map[token.Token]bool) {
+	for ; p.tok != token.EOF; p.next() {
+		if tm[p.tok] {
+			if p.pos == p.syncPos {
+				p.syncCnt++
+				return
+			}
+
+			if p.pos > p.syncPos {
+				p.syncPos = p.pos
+				p.syncCnt = 0
+				return
+			}
+		}
+	}
+}
+
 func (p *parser) parseFile() (*ast.File, error) {
 	if p.trace {
 		defer un(trace(p, "file"))
 	}
+
 	if p.errors.Len() != 0 {
 		return nil, ErrScanFailed
 	}
@@ -337,10 +379,114 @@ func (p *parser) parseStmtList() []ast.Stmt {
 
 	list := make([]ast.Stmt, 0, 10)
 
-	switch p.tok {
+	for p.tok != token.RBRACE && p.tok != token.EOF {
+		list = append(list, p.parseStmt())
 	}
 
 	return list
+}
+
+func (p *parser) parseStmt() (s ast.Stmt) {
+	if p.trace {
+		defer un(trace(p, "Statement"))
+	}
+
+	switch p.tok {
+	case token.IDENT:
+		s = p.parseSimpleStmt()
+	case token.SEMICOLON:
+		s = &ast.EmptyStmt{Semicolon: p.pos, Implicit: p.lit == "\n"}
+		p.next()
+	default:
+		pos := p.pos
+		p.errorExpected(pos, "statement")
+		p.advance(stmtStart)
+		s = &ast.BadStmt{From: pos, To: p.pos}
+	}
+
+	return
+}
+
+func (p *parser) parseSimpleStmt() (s ast.Stmt) {
+	if p.trace {
+		defer un(trace(p, "Simple Stmt"))
+	}
+
+	x := p.parseExpr()
+
+	switch p.tok {
+	case token.DEFINE:
+		pos, tok := p.pos, p.tok
+		p.next()
+
+		y := p.parseBinaryExpr(nil, token.LowestPrec+1)
+		s = &ast.AssignStmt{Lhs: x, TokPos: pos, Tok: tok, Rhs: y}
+	}
+
+	return
+}
+
+func (p *parser) parseExpr() ast.Expr {
+	if p.trace {
+		defer un(trace(p, "Expression"))
+	}
+
+	return p.parseBinaryExpr(nil, token.LowestPrec+1)
+}
+
+func (p *parser) parseBinaryExpr(x ast.Expr, prec int) ast.Expr {
+	if p.trace {
+		defer un(trace(p, "Binary Expr"))
+	}
+
+	if x == nil {
+		x = p.parseUnaryExpr()
+	}
+
+	var n int
+	defer func() { p.nestLev -= n }()
+
+	for n = 1; ; n++ {
+		incNestLev(p) // prevents inf-looping
+		op, oprec := p.tok, p.tokPrec()
+
+		if oprec < prec {
+			return x
+		}
+
+		pos := p.expect(op)
+		y := p.parseBinaryExpr(nil, oprec+1)
+		x = &ast.BinaryExpr{X: x, OpPos: pos, Op: op, Y: y}
+	}
+}
+
+func (p *parser) parseUnaryExpr() (e ast.Expr) {
+	if p.trace {
+		defer un(trace(p, "Unary Expr"))
+	}
+
+	switch p.tok {
+	case token.IDENT:
+		e = p.parseIdent()
+	case token.INT, token.FLOAT, token.IMAG, token.CHAR, token.STRING:
+		e = &ast.BasicLit{ValuePos: p.pos, ValueEnd: p.end(), Kind: p.tok, Value: p.lit}
+		p.next()
+	case token.MUL:
+		pos := p.pos
+		p.next()
+		x := p.parseUnaryExpr()
+		e = &ast.PtrExpr{Star: pos, X: x}
+	case token.ADD, token.SUB, token.NOT, token.XOR, token.AND:
+		pos, op := p.pos, p.tok
+		p.next()
+
+		x := p.parseUnaryExpr()
+		e = &ast.UnaryExpr{Op: op, OpPos: pos, X: x}
+
+		// TODO(parser): Implement parseFunc as an unary expr
+	}
+
+	return
 }
 
 func (p *parser) parseIdent() *ast.Ident {
@@ -359,6 +505,10 @@ func (p *parser) parseIdent() *ast.Ident {
 	}
 
 	return &ast.Ident{Name: name, NamePos: pos}
+}
+
+func (p *parser) tokPrec() int {
+	return p.tok.Precedence()
 }
 
 func (p *parser) expect(tok token.Token) token.Pos {
@@ -423,4 +573,21 @@ func (p *parser) error(pos token.Pos, msg string) {
 	}
 
 	p.errors.Add(fpos, msg)
+}
+
+const maxNestLev = 1e4
+
+func incNestLev(p *parser) *parser {
+	p.nestLev++
+
+	if p.nestLev > maxNestLev {
+		p.error(p.pos, "exceeded max nesting level")
+		panic("exceeded max nesting level")
+	}
+
+	return p
+}
+
+func decNestLev(p *parser) {
+	p.nestLev--
 }
