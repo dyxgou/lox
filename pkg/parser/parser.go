@@ -132,6 +132,10 @@ func (p *parser) parseFile() (*ast.File, error) {
 	return &ast.File{Decls: decls}, nil
 }
 
+func (p *parser) end() token.Pos {
+	return p.scanner.End()
+}
+
 func (p *parser) parseDecl() ast.Decl {
 	if p.trace {
 		defer un(trace(p, "Declaration"))

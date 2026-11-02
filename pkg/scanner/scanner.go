@@ -14,10 +14,14 @@ type Scanner struct {
 	src  []byte
 	err  ErrorHandler
 
-	pos     int
-	readPos int
-	linePos int
-	ch      byte
+	// scanning state
+	ch      byte // current character
+	pos     int  // current position of the char
+	readPos int  // next position of the char
+	linePos int  // current line position
+
+	// token end position
+	endPos token.Pos
 }
 
 const eof = byte(token.EOF)
@@ -161,6 +165,10 @@ func (s *Scanner) Scan() (pos token.Pos, tok token.Token, lit string) {
 		}
 	}
 
+	if tok != token.EOF && tok != token.ILLEGAL {
+		s.endPos = pos + token.Pos(len(lit))
+	}
+
 	return
 }
 
@@ -236,6 +244,16 @@ func (s *Scanner) skipWhitespace() {
 	for s.ch == ' ' || s.ch == '\r' || s.ch == '\t' {
 		s.next()
 	}
+}
+
+func (s *Scanner) End() token.Pos {
+	end := s.endPos
+
+	if !end.IsValid() {
+		end = s.file.End()
+	}
+
+	return end
 }
 
 func isLetter(ch byte) bool {
