@@ -46,7 +46,7 @@ func readFiles(dir string) (iter.Seq2[string, []byte], error) {
 	return it, nil
 }
 
-func TestParse(t *testing.T) {
+func TestParseSource(t *testing.T) {
 	files, err := readFiles("./testdata/")
 	if err != nil {
 		t.Fatalf("reading files: %s", err)
@@ -63,7 +63,7 @@ func TestParse(t *testing.T) {
 				t.Fatalf("parsing file: %s", err)
 			}
 
-			t.Logf("file: %s", f.String())
+			t.Logf("file: %s", parser.Print(f))
 		})
 	}
 }
@@ -149,6 +149,74 @@ func TestParseBinaryExpr(t *testing.T) {
 				},
 			},
 		},
+		{
+			in: "1 == 2",
+			want: &ast.BinaryExpr{
+				X:  &ast.BasicLit{Value: "1", Kind: token.INT},
+				Op: token.EQL,
+				Y:  &ast.BasicLit{Value: "2", Kind: token.INT},
+			},
+		},
+		{
+			in: "1 == 2 == true",
+			want: &ast.BinaryExpr{
+				X: &ast.BinaryExpr{
+					X:  &ast.BasicLit{Value: "1", Kind: token.INT},
+					Op: token.EQL,
+					Y:  &ast.BasicLit{Value: "2", Kind: token.INT},
+				},
+				Y:  &ast.BasicLit{Value: "true", Kind: token.IDENT},
+				Op: token.EQL,
+			},
+		},
+		{
+			in: "1 > 2",
+			want: &ast.BinaryExpr{
+				X:  &ast.BasicLit{Value: "1", Kind: token.INT},
+				Op: token.GTR,
+				Y:  &ast.BasicLit{Value: "2", Kind: token.INT},
+			},
+		},
+		{
+			in: "1 < 2",
+			want: &ast.BinaryExpr{
+				X:  &ast.BasicLit{Value: "1", Kind: token.INT},
+				Op: token.LSS,
+				Y:  &ast.BasicLit{Value: "2", Kind: token.INT},
+			},
+		},
+		{
+			in: "1 <= 2",
+			want: &ast.BinaryExpr{
+				X:  &ast.BasicLit{Value: "1", Kind: token.INT},
+				Op: token.LEQ,
+				Y:  &ast.BasicLit{Value: "2", Kind: token.INT},
+			},
+		},
+		{
+			in: "1 >= 2",
+			want: &ast.BinaryExpr{
+				X:  &ast.BasicLit{Value: "1", Kind: token.INT},
+				Op: token.GEQ,
+				Y:  &ast.BasicLit{Value: "2", Kind: token.INT},
+			},
+		},
+		{
+			in: "true || false",
+			want: &ast.BinaryExpr{
+				X:  &ast.BasicLit{Value: "true", Kind: token.IDENT},
+				Op: token.LOR,
+				Y:  &ast.BasicLit{Value: "false", Kind: token.IDENT},
+			},
+		},
+		{
+			in: "true && false",
+			want: &ast.BinaryExpr{
+				X:  &ast.BasicLit{Value: "true", Kind: token.IDENT},
+				Op: token.LAND,
+				Y:  &ast.BasicLit{Value: "false", Kind: token.IDENT},
+			},
+		},
 	}
 
 	var file token.File
@@ -157,7 +225,7 @@ func TestParseBinaryExpr(t *testing.T) {
 			file.Init(tt.in, 1, len(tt.in))
 			exp := parser.ParseExpr([]byte(tt.in), 0)
 
-			// goast.Print(gotok.NewFileSet(), exp)
+			parser.Print(exp)
 
 			if err := assertExpr(exp, tt.want); err != nil {
 				t.Fatal(err)

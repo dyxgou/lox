@@ -1,10 +1,6 @@
 package ast
 
 import (
-	"bytes"
-	"go/ast"
-	tok "go/token"
-
 	"github.com/dyxgou/lox/pkg/token"
 )
 
@@ -82,11 +78,3 @@ func (*UnaryExpr) exprNode()  {}
 func (*BinaryExpr) exprNode() {}
 func (*PtrExpr) exprNode()    {}
 func (*BasicLit) exprNode()   {}
-
-func (e *File) String() string {
-	var buf bytes.Buffer
-
-	ast.Fprint(&buf, tok.NewFileSet(), e, nil)
-
-	return buf.String()
-}

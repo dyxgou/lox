@@ -1,6 +1,11 @@
 package parser
 
 import (
+	"bytes"
+	goast "go/ast"
+	gotok "go/token"
+	"reflect"
+
 	"github.com/dyxgou/lox/pkg/ast"
 	"github.com/dyxgou/lox/pkg/token"
 )
@@ -32,4 +37,24 @@ func ParseExpr(src []byte, mode Mode) ast.Expr {
 	p.init(&file, src, mode)
 
 	return p.parseExpr()
+}
+
+func SkipEmptyStmt(name string, value reflect.Value) bool {
+	empty := reflect.Zero(reflect.TypeFor[ast.EmptyStmt]())
+
+	for st := range empty.Fields() {
+		if st.Name == name {
+			return false
+		}
+	}
+
+	return true
+}
+
+func Print(x ast.Node) string {
+	var buf bytes.Buffer
+
+	goast.Fprint(&buf, gotok.NewFileSet(), x, SkipEmptyStmt)
+
+	return buf.String()
 }
