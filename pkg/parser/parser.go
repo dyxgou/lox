@@ -473,6 +473,13 @@ func (p *parser) parseUnaryExpr() (e ast.Expr) {
 	case token.INT, token.FLOAT, token.IMAG, token.CHAR, token.STRING:
 		e = &ast.BasicLit{ValuePos: p.pos, ValueEnd: p.end(), Kind: p.tok, Value: p.lit}
 		p.next()
+	case token.LPAREN:
+		lparen := p.expect(token.LPAREN)
+
+		x := p.parseExpr()
+
+		rparen := p.expect(token.RPAREN)
+		e = &ast.ParenExpr{Lparen: lparen, X: x, Rparen: rparen}
 	case token.MUL:
 		pos := p.pos
 		p.next()

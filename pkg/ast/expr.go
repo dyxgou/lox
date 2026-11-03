@@ -46,6 +46,12 @@ type (
 		Value    string
 		ValueEnd token.Pos
 	}
+
+	ParenExpr struct {
+		Lparen token.Pos // position of '('
+		X      Expr      // Expression
+		Rparen token.Pos // position of ')'
+	}
 )
 
 func (e *BadExpr) Pos() token.Pos { return e.From }
@@ -71,6 +77,9 @@ func (e *PtrExpr) End() token.Pos { return e.X.End() }
 func (e *BasicLit) Pos() token.Pos { return e.ValuePos }
 func (e *BasicLit) End() token.Pos { return e.ValueEnd }
 
+func (e *ParenExpr) Pos() token.Pos { return e.Lparen }
+func (e *ParenExpr) End() token.Pos { return e.Rparen }
+
 func (*File) exprNode()       {}
 func (*Ident) exprNode()      {}
 func (*BadExpr) exprNode()    {}
@@ -78,3 +87,4 @@ func (*UnaryExpr) exprNode()  {}
 func (*BinaryExpr) exprNode() {}
 func (*PtrExpr) exprNode()    {}
 func (*BasicLit) exprNode()   {}
+func (*ParenExpr) exprNode()  {}
