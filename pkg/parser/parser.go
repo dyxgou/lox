@@ -112,7 +112,7 @@ var stmtStart = map[token.Token]bool{
 func (p *parser) advance(tm map[token.Token]bool) {
 	for ; p.tok != token.EOF; p.next() {
 		if tm[p.tok] {
-			if p.pos == p.syncPos {
+			if p.pos == p.syncPos && p.syncCnt < 10 {
 				p.syncCnt++
 				return
 			}
