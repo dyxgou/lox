@@ -394,6 +394,8 @@ func (p *parser) parseStmt() (s ast.Stmt) {
 	switch p.tok {
 	case token.IDENT:
 		s = p.parseSimpleStmt()
+	case token.IF:
+		s = p.parseIfStmt()
 	case token.SEMICOLON:
 		s = &ast.EmptyStmt{Semicolon: p.pos, Implicit: p.lit == "\n"}
 		p.next()
@@ -407,7 +409,7 @@ func (p *parser) parseStmt() (s ast.Stmt) {
 	return
 }
 
-func (p *parser) parseSimpleStmt() (s ast.Stmt) {
+func (p *parser) parseSimpleStmt() ast.Stmt {
 	if p.trace {
 		defer un(trace(p, "Simple Stmt"))
 	}
@@ -420,10 +422,10 @@ func (p *parser) parseSimpleStmt() (s ast.Stmt) {
 		p.next()
 
 		y := p.parseBinaryExpr(nil, token.LowestPrec+1)
-		s = &ast.AssignStmt{Lhs: x, TokPos: pos, Tok: tok, Rhs: y}
+		return &ast.AssignStmt{Lhs: x, TokPos: pos, Tok: tok, Rhs: y}
 	}
 
-	return
+	return &ast.ExprStmt{X: x}
 }
 
 func (p *parser) parseExpr() ast.Expr {
@@ -482,11 +484,80 @@ func (p *parser) parseUnaryExpr() (e ast.Expr) {
 
 		x := p.parseUnaryExpr()
 		e = &ast.UnaryExpr{Op: op, OpPos: pos, X: x}
-
-		// TODO(parser): Implement parseFunc as an unary expr
 	}
 
 	return
+}
+
+func (p *parser) parseIfStmt() *ast.IfStmt {
+	if p.trace {
+		defer un(trace(p, "IfStmt"))
+	}
+
+	pos := p.expect(token.IF)
+	cond := p.parseIfCond()
+	p.expect(token.LBRACE)
+	body := p.parseBody()
+
+	var elseStmt ast.Stmt
+	if p.tok == token.ELSE {
+		p.next()
+
+		switch p.tok {
+		case token.IF:
+			elseStmt = p.parseIfStmt()
+		case token.LBRACE:
+			elseStmt = p.parseBody()
+		default:
+			p.errorExpected(p.pos, "if statement or block")
+			elseStmt = &ast.BadStmt{From: p.pos, To: p.pos}
+		}
+
+	} else {
+		p.expectSemi()
+	}
+
+	return &ast.IfStmt{
+		If:   pos,
+		Cond: cond,
+		Body: body,
+		Else: elseStmt,
+	}
+}
+
+func (p *parser) parseIfCond() ast.Expr {
+	if p.trace {
+		defer un(trace(p, "IfCond"))
+	}
+
+	if p.tok == token.LBRACE {
+		p.error(p.pos, "expected cond in if statement")
+		return &ast.BadExpr{From: p.pos, To: p.pos}
+	}
+
+	return p.makeExpr(p.parseSimpleStmt(), "boolean expression")
+}
+
+func (p *parser) makeExpr(s ast.Stmt, want string) ast.Expr {
+	if p.trace {
+		defer un(trace(p, "Make Expr"))
+	}
+
+	if s == nil {
+		return nil
+	}
+
+	if es, isExpr := s.(*ast.ExprStmt); isExpr {
+		return es.X
+	}
+
+	found := "simple statement"
+	if _, isAss := s.(*ast.AssignStmt); isAss {
+		found = "assignment"
+	}
+
+	p.error(s.Pos(), fmt.Sprintf("expected=%q, got=%q", want, found))
+	return &ast.BadExpr{From: s.Pos(), To: s.End()}
 }
 
 func (p *parser) parseIdent() *ast.Ident {

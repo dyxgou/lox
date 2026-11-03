@@ -1,0 +1,11 @@
+func main() {
+  if cond {
+    age := 20
+  } else if cond {
+    num := 1
+  } else if cond {
+    num := 2
+  } else {
+    num := 3
+  }
+}
