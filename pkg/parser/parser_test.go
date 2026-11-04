@@ -55,6 +55,8 @@ func TestParseSource(t *testing.T) {
 	var file token.File
 
 	for name, src := range files {
+		name := path.Base(name)
+
 		t.Run(name, func(t *testing.T) {
 			file.Init(name, 1, len(src))
 			f, err := parser.ParseFile(&file, src, parser.SkipPackage|parser.TraceMode)

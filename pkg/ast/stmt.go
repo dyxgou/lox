@@ -45,6 +45,11 @@ type (
 		Body *BlockStmt
 	}
 
+	ReturnStmt struct {
+		Results []Expr    // Returned Value
+		Return  token.Pos // position of 'return' keyword
+	}
+
 	IncDecStmt struct {
 		X      Expr        // expression
 		TokPos token.Pos   // position of the tok
@@ -84,6 +89,15 @@ func (s *ForStmt) End() token.Pos {
 func (s *IncDecStmt) Pos() token.Pos { return s.X.Pos() }
 func (s *IncDecStmt) End() token.Pos { return s.TokPos + 2 /* len("++") */ }
 
+func (s *ReturnStmt) Pos() token.Pos { return s.Return }
+func (s *ReturnStmt) End() token.Pos {
+	if len(s.Results) > 1 {
+		return s.Results[len(s.Results)-1].End()
+	}
+
+	return s.Return + 6 /* len("return") */
+}
+
 func (s *BadStmt) stmtNode()    {}
 func (s *EmptyStmt) stmtNode()  {}
 func (s *ExprStmt) stmtNode()   {}
@@ -92,3 +106,4 @@ func (s *AssignStmt) stmtNode() {}
 func (s *IfStmt) stmtNode()     {}
 func (s *ForStmt) stmtNode()    {}
 func (s *IncDecStmt) stmtNode() {}
+func (s *ReturnStmt) stmtNode() {}

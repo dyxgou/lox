@@ -219,6 +219,21 @@ func (p *parser) parseFuncDecl() *ast.FuncDecl {
 	}
 }
 
+func (p *parser) parseReturnStmt() *ast.ReturnStmt {
+	if p.trace {
+		defer un(trace(p, "Return Stmt"))
+	}
+
+	pos := p.expect(token.RETURN)
+	res := p.parseExprList()
+	p.expectSemi()
+
+	return &ast.ReturnStmt{
+		Return:  pos,
+		Results: res,
+	}
+}
+
 func (p *parser) parseParameters() *ast.FieldList {
 	if p.trace {
 		defer un(trace(p, "Parameters"))
@@ -400,6 +415,8 @@ func (p *parser) parseStmt() (s ast.Stmt) {
 		s = p.parseIfStmt()
 	case token.FOR:
 		s = p.parseForStmt()
+	case token.RETURN:
+		s = p.parseReturnStmt()
 	case token.SEMICOLON:
 		s = &ast.EmptyStmt{Semicolon: p.pos, Implicit: p.lit == "\n"}
 		p.next()
@@ -435,6 +452,22 @@ func (p *parser) parseSimpleStmt() ast.Stmt {
 	}
 
 	return &ast.ExprStmt{X: x}
+}
+
+func (p *parser) parseExprList() []ast.Expr {
+	if p.trace {
+		defer un(trace(p, "ExpressionList"))
+	}
+
+	list := make([]ast.Expr, 0, 10)
+
+	list = append(list, p.parseExpr())
+	for p.tok == token.COMMA {
+		p.next()
+		list = append(list, p.parseExpr())
+	}
+
+	return list
 }
 
 func (p *parser) parseExpr() ast.Expr {
