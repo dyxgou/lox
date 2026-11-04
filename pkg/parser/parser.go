@@ -392,10 +392,12 @@ func (p *parser) parseStmt() (s ast.Stmt) {
 	}
 
 	switch p.tok {
-	case token.IDENT:
+	case token.IDENT, token.INT, token.FLOAT, token.IMAG, token.STRING:
 		s = p.parseSimpleStmt()
 	case token.IF:
 		s = p.parseIfStmt()
+	case token.FOR:
+		s = p.parseForStmt()
 	case token.SEMICOLON:
 		s = &ast.EmptyStmt{Semicolon: p.pos, Implicit: p.lit == "\n"}
 		p.next()
@@ -548,6 +550,41 @@ func (p *parser) parseIfCond() ast.Expr {
 	}
 
 	return p.makeExpr(p.parseSimpleStmt(), "boolean expression")
+}
+
+func (p *parser) parseForStmt() *ast.ForStmt {
+	defer decNestLev(incNestLev(p))
+
+	if p.trace {
+		defer un(trace(p, "ForStmt"))
+	}
+
+	pos := p.expect(token.FOR)
+	var init, cond, post ast.Stmt
+
+	if p.tok != token.LBRACE {
+		init = p.parseSimpleStmt()
+		p.expectSemi()
+
+		if p.tok != token.SEMICOLON {
+			cond = p.parseSimpleStmt()
+			p.expectSemi()
+		}
+
+		if p.tok != token.LBRACE {
+			post = p.parseSimpleStmt()
+		}
+	}
+
+	body := p.parseBody()
+
+	return &ast.ForStmt{
+		For:  pos,
+		Init: init,
+		Cond: p.makeExpr(cond, "expected boolean expression"),
+		Post: post,
+		Body: body,
+	}
 }
 
 func (p *parser) makeExpr(s ast.Stmt, want string) ast.Expr {

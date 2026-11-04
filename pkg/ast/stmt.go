@@ -37,6 +37,14 @@ type (
 		Else Stmt // else branch or nil
 	}
 
+	ForStmt struct {
+		For  token.Pos // position of 'for' keyword
+		Init Stmt      // initialization statement or nil
+		Cond Expr      // condition expression
+		Post Stmt      // post iteration statement or nil
+		Body *BlockStmt
+	}
+
 	IncDecStmt struct {
 		X      Expr        // expression
 		TokPos token.Pos   // position of the tok
@@ -68,6 +76,10 @@ func (s *IfStmt) End() token.Pos {
 	return s.Body.End()
 }
 
+func (s *ForStmt) Pos() token.Pos { return s.For }
+func (s *ForStmt) End() token.Pos {
+	return s.Body.End()
+}
 
 func (s *IncDecStmt) Pos() token.Pos { return s.X.Pos() }
 func (s *IncDecStmt) End() token.Pos { return s.TokPos + 2 /* len("++") */ }
@@ -78,4 +90,5 @@ func (s *ExprStmt) stmtNode()   {}
 func (s *BlockStmt) stmtNode()  {}
 func (s *AssignStmt) stmtNode() {}
 func (s *IfStmt) stmtNode()     {}
+func (s *ForStmt) stmtNode()    {}
 func (s *IncDecStmt) stmtNode() {}
