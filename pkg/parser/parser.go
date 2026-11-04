@@ -387,6 +387,8 @@ func (p *parser) parseStmtList() []ast.Stmt {
 }
 
 func (p *parser) parseStmt() (s ast.Stmt) {
+	defer decNestLev(incNestLev(p))
+
 	if p.trace {
 		defer un(trace(p, "Statement"))
 	}
@@ -419,7 +421,7 @@ func (p *parser) parseSimpleStmt() ast.Stmt {
 	x := p.parseExpr()
 
 	switch p.tok {
-	case token.DEFINE:
+	case token.DEFINE, token.ASSIGN:
 		pos, tok := p.pos, p.tok
 		p.next()
 
@@ -470,6 +472,8 @@ func (p *parser) parseBinaryExpr(x ast.Expr, prec int) ast.Expr {
 }
 
 func (p *parser) parseUnaryExpr() (e ast.Expr) {
+	defer decNestLev(incNestLev(p))
+
 	if p.trace {
 		defer un(trace(p, "Unary Expr"))
 	}
@@ -504,6 +508,8 @@ func (p *parser) parseUnaryExpr() (e ast.Expr) {
 }
 
 func (p *parser) parseIfStmt() *ast.IfStmt {
+	defer decNestLev(incNestLev(p))
+
 	if p.trace {
 		defer un(trace(p, "IfStmt"))
 	}
