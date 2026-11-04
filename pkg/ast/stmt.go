@@ -36,6 +36,12 @@ type (
 		Body *BlockStmt
 		Else Stmt // else branch or nil
 	}
+
+	IncDecStmt struct {
+		X      Expr        // expression
+		TokPos token.Pos   // position of the tok
+		Tok    token.Token // INC or DEC
+	}
 )
 
 func (s *BadStmt) Pos() token.Pos { return s.From }
@@ -62,9 +68,14 @@ func (s *IfStmt) End() token.Pos {
 	return s.Body.End()
 }
 
+
+func (s *IncDecStmt) Pos() token.Pos { return s.X.Pos() }
+func (s *IncDecStmt) End() token.Pos { return s.TokPos + 2 /* len("++") */ }
+
 func (s *BadStmt) stmtNode()    {}
 func (s *EmptyStmt) stmtNode()  {}
 func (s *ExprStmt) stmtNode()   {}
 func (s *BlockStmt) stmtNode()  {}
 func (s *AssignStmt) stmtNode() {}
 func (s *IfStmt) stmtNode()     {}
+func (s *IncDecStmt) stmtNode() {}

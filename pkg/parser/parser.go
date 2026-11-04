@@ -423,6 +423,11 @@ func (p *parser) parseSimpleStmt() ast.Stmt {
 
 		y := p.parseBinaryExpr(nil, token.LowestPrec+1)
 		return &ast.AssignStmt{Lhs: x, TokPos: pos, Tok: tok, Rhs: y}
+	case token.INC, token.DEC:
+		s := &ast.IncDecStmt{X: x, TokPos: p.pos, Tok: p.tok}
+		p.next()
+
+		return s
 	}
 
 	return &ast.ExprStmt{X: x}
