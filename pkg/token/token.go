@@ -97,6 +97,7 @@ const (
 	DEFAULT
 	ELSE
 	FOR
+	RANGE
 
 	FUNC
 	IF
@@ -186,6 +187,7 @@ var tokens = [...]string{
 	DEFAULT: "default",
 	ELSE:    "else",
 	FOR:     "for",
+	RANGE:   "range",
 
 	FUNC: "func",
 	IF:   "if",
