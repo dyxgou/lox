@@ -553,7 +553,6 @@ func (p *parser) parseIfStmt() *ast.IfStmt {
 
 	pos := p.expect(token.IF)
 	cond := p.parseIfCond()
-	p.expect(token.LBRACE)
 	body := p.parseBody()
 
 	var elseStmt ast.Stmt
