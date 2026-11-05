@@ -182,20 +182,47 @@ func (p *parser) end() token.Pos {
 	return p.scanner.End()
 }
 
-func (p *parser) parseDecl() ast.Decl {
+func (p *parser) parseDecl() (d ast.Decl) {
 	if p.trace {
 		defer un(trace(p, "Declaration"))
 	}
 
 	switch p.tok {
+	case token.VAR, token.CONST:
+		d = p.parseValue(p.tok)
 	case token.FUNC:
-		return p.parseFuncDecl()
+		d = p.parseFuncDecl()
 	default:
 		p.errorExpected(p.pos, "declaration")
 		p.next()
 	}
 
-	return nil
+	return
+}
+
+// TODO(parser): Implement a GenDecl for grouping decls like
+// import, type, var, const
+
+func (p *parser) parseValue(tok token.Token) *ast.ValueDecl {
+	pos := p.expect(tok)
+	idents := p.parseIdentList()
+	typ := p.parseType()
+
+	var vals []ast.Expr
+	if p.tok == token.ASSIGN {
+		p.next()
+		vals = p.parseExprList()
+	}
+
+	p.expectSemi()
+
+	return &ast.ValueDecl{
+		TokPos: pos,
+		Tok:    tok,
+		Names:  idents,
+		Type:   typ,
+		Values: vals,
+	}
 }
 
 func (p *parser) parseFuncDecl() *ast.FuncDecl {
@@ -416,7 +443,9 @@ func (p *parser) parseStmt() (s ast.Stmt) {
 	}
 
 	switch p.tok {
-	case token.IDENT, token.INT, token.FLOAT, token.IMAG, token.STRING:
+	case token.CONST, token.VAR:
+		s = &ast.DeclStmt{Decl: p.parseDecl()}
+	case token.IDENT, token.INT, token.FLOAT, token.IMAG, token.STRING, token.LBRACK:
 		s = p.parseSimpleStmt()
 	case token.IF:
 		s = p.parseIfStmt()
@@ -737,6 +766,21 @@ func (p *parser) parseIdent() *ast.Ident {
 	return &ast.Ident{Name: name, NamePos: pos}
 }
 
+func (p *parser) parseIdentList() []*ast.Ident {
+	if p.trace {
+		defer un(trace(p, "IdentList"))
+	}
+
+	list := make([]*ast.Ident, 0, 2)
+	list = append(list, p.parseIdent())
+	for p.tok == token.COMMA {
+		p.next()
+		list = append(list, p.parseIdent())
+	}
+
+	return list
+}
+
 func (p *parser) tokPrec() int {
 	return p.tok.Precedence()
 }
@@ -810,6 +854,7 @@ func (p *parser) error(pos token.Pos, msg string) {
 }
 
 const maxNestLev = 1e4
+const maxNestLev = 1e2
 
 func incNestLev(p *parser) *parser {
 	p.nestLev++

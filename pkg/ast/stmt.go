@@ -12,6 +12,10 @@ type (
 		Implicit  bool      // if set, ';' was omitted in the source code
 	}
 
+	DeclStmt struct {
+		Decl Decl
+	}
+
 	// ExprStmt represents a stand-alone expression on a statement list
 	ExprStmt struct {
 		X Expr // expression
@@ -136,6 +140,9 @@ func (s *BranchStmt) End() token.Pos {
 	return s.TokPos + token.Pos(len(s.Tok.String()))
 }
 
+func (s *DeclStmt) Pos() token.Pos { return s.Decl.Pos() }
+func (s *DeclStmt) End() token.Pos { return s.Decl.End() }
+
 func (s *BadStmt) stmtNode()    {}
 func (s *EmptyStmt) stmtNode()  {}
 func (s *ExprStmt) stmtNode()   {}
@@ -148,3 +155,4 @@ func (s *ReturnStmt) stmtNode() {}
 func (s *SwitchStmt) stmtNode() {}
 func (s *CaseClause) stmtNode() {}
 func (s *BranchStmt) stmtNode() {}
+func (s *DeclStmt) stmtNode()   {}

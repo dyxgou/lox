@@ -1,0 +1,8 @@
+func main() {
+  var name string
+  var age int = 20
+  var num1, num2, num3 int = 1, 2, 3
+
+  const num int
+  const num4 int = 50
+}
