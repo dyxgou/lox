@@ -50,6 +50,19 @@ type (
 		Return  token.Pos // position of 'return' keyword
 	}
 
+	SwitchStmt struct {
+		Switch token.Pos  // position of the 'switch' keyword
+		Cond   Expr       // condition
+		Body   *BlockStmt // Just CauseClauses
+	}
+
+	CaseClause struct {
+		Case  token.Pos // position of the 'case' keyword
+		Cond  Expr      // cond of the case clause, nil means default
+		Colon token.Pos // position of the ':'
+		Body  []Stmt
+	}
+
 	IncDecStmt struct {
 		X      Expr        // expression
 		TokPos token.Pos   // position of the tok
@@ -97,11 +110,25 @@ func (s *IncDecStmt) End() token.Pos { return s.TokPos + 2 /* len("++") */ }
 
 func (s *ReturnStmt) Pos() token.Pos { return s.Return }
 func (s *ReturnStmt) End() token.Pos {
-	if len(s.Results) > 1 {
-		return s.Results[len(s.Results)-1].End()
+	if n := len(s.Results); n > 0 {
+		return s.Results[n-1].End()
 	}
 
 	return s.Return + 6 /* len("return") */
+}
+
+func (s *SwitchStmt) Pos() token.Pos { return s.Switch }
+func (s *SwitchStmt) End() token.Pos {
+	return s.Body.End()
+}
+
+func (s *CaseClause) Pos() token.Pos { return s.Case }
+func (s *CaseClause) End() token.Pos {
+	if n := len(s.Body); n > 0 {
+		return s.Body[n-1].End()
+	}
+
+	return s.Colon + 1
 }
 
 func (s *BranchStmt) Pos() token.Pos { return s.TokPos }
@@ -118,4 +145,6 @@ func (s *IfStmt) stmtNode()     {}
 func (s *ForStmt) stmtNode()    {}
 func (s *IncDecStmt) stmtNode() {}
 func (s *ReturnStmt) stmtNode() {}
+func (s *SwitchStmt) stmtNode() {}
+func (s *CaseClause) stmtNode() {}
 func (s *BranchStmt) stmtNode() {}

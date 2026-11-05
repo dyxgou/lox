@@ -424,6 +424,8 @@ func (p *parser) parseStmt() (s ast.Stmt) {
 		s = p.parseForStmt()
 	case token.RETURN:
 		s = p.parseReturnStmt()
+	case token.SWITCH:
+		s = p.parseSwitchStmt()
 	case token.BREAK, token.CONTINUE:
 		s = p.parseBranchStmt(p.tok)
 	case token.SEMICOLON:
@@ -631,6 +633,56 @@ func (p *parser) parseForStmt() *ast.ForStmt {
 		Cond: p.makeExpr(cond, "expected boolean expression"),
 		Post: post,
 		Body: body,
+	}
+}
+
+func (p *parser) parseSwitchStmt() *ast.SwitchStmt {
+	pos := p.expect(token.SWITCH)
+
+	cond := p.parseExpr()
+
+	lbrace := p.expect(token.LBRACE)
+	p.expectSemi()
+
+	list := make([]ast.Stmt, 0, 4)
+	for p.tok == token.CASE || p.tok == token.DEFAULT {
+		list = append(list, p.parseCaseClause())
+	}
+
+	rbrace := p.expect(token.RBRACE)
+	p.expectSemi()
+	body := &ast.BlockStmt{Lbrace: lbrace, List: list, Rbrace: rbrace}
+
+	return &ast.SwitchStmt{
+		Switch: pos,
+		Cond:   cond,
+		Body:   body,
+	}
+}
+
+func (p *parser) parseCaseClause() *ast.CaseClause {
+	if p.trace {
+		defer un(trace(p, "CaseClause"))
+	}
+
+	pos := p.pos
+	var cond ast.Expr
+
+	if p.tok == token.CASE {
+		p.next()
+		cond = p.parseExpr()
+	} else {
+		p.expect(token.DEFAULT)
+	}
+
+	colon := p.expect(token.COLON)
+	body := p.parseStmtList()
+
+	return &ast.CaseClause{
+		Case:  pos,
+		Cond:  cond,
+		Colon: colon,
+		Body:  body,
 	}
 }
 

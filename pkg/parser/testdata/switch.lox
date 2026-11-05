@@ -1,0 +1,11 @@
+func main() {
+  switch cond {
+    case expr1:
+      stmt1 := val1
+    case expr2:
+      stmt2 := val2
+      break
+    default:
+      stmt3 := val3
+  }
+}

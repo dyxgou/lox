@@ -61,11 +61,13 @@ func TestParseSource(t *testing.T) {
 			file.Init(name, 1, len(src))
 			f, err := parser.ParseFile(&file, src, parser.SkipPackage|parser.TraceMode)
 
+			if f != nil {
+				t.Logf("file: %s", parser.Print(f))
+			}
+
 			if err != nil {
 				t.Fatalf("parsing file: %s", err)
 			}
-
-			t.Logf("file: %s", parser.Print(f))
 		})
 	}
 }
