@@ -40,6 +40,12 @@ func (el ErrorList) Error() string {
 	return fmt.Sprintf("%s (and %d more errors)", el[0], len(el)-1)
 }
 
+func (el ErrorList) Print() {
+	for i, el := range el {
+		fmt.Printf("%2d:%s: %s\n", i+1, el.Pos.String(), el.Msg)
+	}
+}
+
 func (el *ErrorList) Add(pos token.Position, msg string) {
 	*el = append(*el, &Error{msg, pos})
 }

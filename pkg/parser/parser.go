@@ -3,7 +3,6 @@ package parser
 import (
 	"errors"
 	"fmt"
-	"log/slog"
 	"strings"
 
 	"github.com/dyxgou/lox/pkg/ast"
@@ -145,7 +144,6 @@ func (p *parser) parseFile() (*ast.File, error) {
 		p.expectSemi()
 
 		if p.errors.Len() != 0 {
-			slog.Error("error parsing", "e", p.errors[0].Error())
 			return nil, errors.New("failed parsing package notation")
 		}
 	}
@@ -171,7 +169,13 @@ func (p *parser) parseFile() (*ast.File, error) {
 		decls = append(decls, p.parseDecl())
 	}
 
-	return &ast.File{Decls: decls}, nil
+	file := &ast.File{Decls: decls}
+	if n := p.errors.Len(); n != 0 {
+		p.errors.Print()
+		return file, fmt.Errorf("failed parsing decls. errors=%d", n)
+	}
+
+	return file, nil
 }
 
 func (p *parser) end() token.Pos {
@@ -719,6 +723,10 @@ func (p *parser) errorExpected(pos token.Pos, msg string) {
 }
 
 func (p *parser) error(pos token.Pos, msg string) {
+	if p.trace {
+		defer un(trace(p, fmt.Sprintf("error: %s", msg)))
+	}
+
 	fpos := p.file.Position(pos)
 	n := p.errors.Len()
 
