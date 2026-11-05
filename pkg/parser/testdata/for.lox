@@ -1,5 +1,11 @@
 func main() {
   for n := 1; n < 10 ; n++ {
     name := "Ale"
+
+    if n == 5 {
+      continue
+    } else if n == 6 {
+      break
+    }
   }
 }

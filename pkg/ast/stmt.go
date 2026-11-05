@@ -55,6 +55,12 @@ type (
 		TokPos token.Pos   // position of the tok
 		Tok    token.Token // INC or DEC
 	}
+
+	// BranchStmt represents a 'continue' and 'break' keyword
+	BranchStmt struct {
+		Tok    token.Token // keyword token (continue, break)
+		TokPos token.Pos   // position of keyword
+	}
 )
 
 func (s *BadStmt) Pos() token.Pos { return s.From }
@@ -98,6 +104,11 @@ func (s *ReturnStmt) End() token.Pos {
 	return s.Return + 6 /* len("return") */
 }
 
+func (s *BranchStmt) Pos() token.Pos { return s.TokPos }
+func (s *BranchStmt) End() token.Pos {
+	return s.TokPos + token.Pos(len(s.Tok.String()))
+}
+
 func (s *BadStmt) stmtNode()    {}
 func (s *EmptyStmt) stmtNode()  {}
 func (s *ExprStmt) stmtNode()   {}
@@ -107,3 +118,4 @@ func (s *IfStmt) stmtNode()     {}
 func (s *ForStmt) stmtNode()    {}
 func (s *IncDecStmt) stmtNode() {}
 func (s *ReturnStmt) stmtNode() {}
+func (s *BranchStmt) stmtNode() {}

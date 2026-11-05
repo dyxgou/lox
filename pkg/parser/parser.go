@@ -398,7 +398,10 @@ func (p *parser) parseStmtList() []ast.Stmt {
 
 	list := make([]ast.Stmt, 0, 10)
 
-	for p.tok != token.RBRACE && p.tok != token.EOF {
+	for p.tok != token.CASE &&
+		p.tok != token.DEFAULT &&
+		p.tok != token.RBRACE &&
+		p.tok != token.EOF {
 		list = append(list, p.parseStmt())
 	}
 
@@ -421,6 +424,8 @@ func (p *parser) parseStmt() (s ast.Stmt) {
 		s = p.parseForStmt()
 	case token.RETURN:
 		s = p.parseReturnStmt()
+	case token.BREAK, token.CONTINUE:
+		s = p.parseBranchStmt(p.tok)
 	case token.SEMICOLON:
 		s = &ast.EmptyStmt{Semicolon: p.pos, Implicit: p.lit == "\n"}
 		p.next()
@@ -627,6 +632,17 @@ func (p *parser) parseForStmt() *ast.ForStmt {
 		Post: post,
 		Body: body,
 	}
+}
+
+func (p *parser) parseBranchStmt(tok token.Token) *ast.BranchStmt {
+	if p.trace {
+		defer un(trace(p, "BranchStmt"))
+	}
+
+	pos := p.expect(tok)
+	p.expectSemi()
+
+	return &ast.BranchStmt{TokPos: pos, Tok: tok}
 }
 
 func (p *parser) makeExpr(s ast.Stmt, want string) ast.Expr {
