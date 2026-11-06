@@ -214,6 +214,11 @@ func (p *parser) parseValue(tok token.Token) *ast.ValueDecl {
 		vals = p.parseExprList()
 	}
 
+	if n := len(vals); n > 0 && len(idents) != n {
+		p.error(p.pos, fmt.Sprintf("not enough idents=%d compared to values=%d",
+			len(idents), len(vals)))
+	}
+
 	p.expectSemi()
 
 	return &ast.ValueDecl{

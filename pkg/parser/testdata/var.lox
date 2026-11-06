@@ -1,3 +1,5 @@
+var val1 int
+
 func main() {
   var name string
   var age int = 20
