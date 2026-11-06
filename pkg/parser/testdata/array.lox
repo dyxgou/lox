@@ -1,0 +1,4 @@
+func main() {
+  arr1 := []type{}
+  arr2 := [5]type{1,2,3,4,5}
+}

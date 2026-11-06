@@ -52,6 +52,19 @@ type (
 		X      Expr      // Expression
 		Rparen token.Pos // position of ')'
 	}
+
+	ArrayType struct {
+		Lbrack token.Pos // position of '['
+		Len    Expr      // nil if slice
+		Elt    Expr      // element type
+	}
+
+	CompositeLit struct {
+		Type   Expr      // literal type or nil
+		Lbrace token.Pos // position of '{'
+		Elts   []Expr
+		Rbrace token.Pos // position of '}'
+	}
 )
 
 func (e *BadExpr) Pos() token.Pos { return e.From }
@@ -80,6 +93,12 @@ func (e *BasicLit) End() token.Pos { return e.ValueEnd }
 func (e *ParenExpr) Pos() token.Pos { return e.Lparen }
 func (e *ParenExpr) End() token.Pos { return e.Rparen }
 
+func (e *ArrayType) Pos() token.Pos { return e.Lbrack }
+func (e *ArrayType) End() token.Pos { return e.Elt.End() }
+
+func (e *CompositeLit) Pos() token.Pos { return e.Lbrace }
+func (e *CompositeLit) End() token.Pos { return e.Rbrace }
+
 func (*File) exprNode()       {}
 func (*Ident) exprNode()      {}
 func (*BadExpr) exprNode()    {}
@@ -88,3 +107,6 @@ func (*BinaryExpr) exprNode() {}
 func (*PtrExpr) exprNode()    {}
 func (*BasicLit) exprNode()   {}
 func (*ParenExpr) exprNode()  {}
+
+func (*ArrayType) exprNode()    {}
+func (*CompositeLit) exprNode() {}

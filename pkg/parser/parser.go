@@ -401,6 +401,8 @@ func (p *parser) tryIdentOrType() (typ ast.Expr) {
 	switch p.tok {
 	case token.IDENT:
 		typ = p.parseIdent()
+	case token.LBRACK:
+		typ = p.parseArrayType()
 	}
 
 	return
@@ -557,11 +559,11 @@ func (p *parser) parseUnaryExpr() (e ast.Expr) {
 	case token.INT, token.FLOAT, token.IMAG, token.CHAR, token.STRING:
 		e = &ast.BasicLit{ValuePos: p.pos, ValueEnd: p.end(), Kind: p.tok, Value: p.lit}
 		p.next()
+	case token.LBRACK:
+		e = p.parseArrayType()
 	case token.LPAREN:
 		lparen := p.expect(token.LPAREN)
-
 		x := p.parseExpr()
-
 		rparen := p.expect(token.RPAREN)
 		e = &ast.ParenExpr{Lparen: lparen, X: x, Rparen: rparen}
 	case token.MUL:
@@ -575,6 +577,10 @@ func (p *parser) parseUnaryExpr() (e ast.Expr) {
 
 		x := p.parseUnaryExpr()
 		e = &ast.UnaryExpr{Op: op, OpPos: pos, X: x}
+	}
+
+	if ar, ok := e.(*ast.ArrayType); ok {
+		e = p.parseLiteralValue(ar)
 	}
 
 	return
@@ -781,6 +787,74 @@ func (p *parser) parseIdentList() []*ast.Ident {
 	return list
 }
 
+func (p *parser) parseLiteralValue(typ ast.Expr) *ast.CompositeLit {
+	defer decNestLev(incNestLev(p))
+
+	if p.trace {
+		defer un(trace(p, "LiteralValue"))
+	}
+
+	lbrace := p.expect(token.LBRACE)
+	var elts []ast.Expr
+	if p.tok != token.RBRACE {
+		elts = p.parseElementList()
+	}
+
+	rbrace := p.expectClosing(token.RBRACE, "composite literal")
+	return &ast.CompositeLit{Type: typ, Lbrace: lbrace, Elts: elts, Rbrace: rbrace}
+}
+
+func (p *parser) parseElementList() []ast.Expr {
+	if p.trace {
+		defer un(trace(p, "ElementList"))
+	}
+
+	list := make([]ast.Expr, 0, 5)
+	for p.tok != token.RBRACE && p.tok != token.EOF {
+		list = append(list, p.parseElement())
+		if !p.atComma("composite literal", token.RBRACE) {
+			break
+		}
+		p.next()
+	}
+
+	return list
+}
+
+func (p *parser) parseElement() ast.Expr {
+	if p.trace {
+		defer un(trace(p, "Element"))
+	}
+
+	// TODO(parser): Implement parsing struct fields
+	// for now it just parses list elements
+	return p.parseExpr()
+}
+
+func (p *parser) parseArrayType() *ast.ArrayType {
+	if p.trace {
+		defer un(trace(p, "ArrayType"))
+	}
+
+	lbrack := p.expect(token.LBRACK)
+	var len ast.Expr
+
+	if p.tok != token.RBRACK {
+		if p.tok != token.INT {
+			pos := p.expect(token.INT)
+			len = &ast.BadExpr{From: pos, To: p.pos}
+		} else {
+			len = p.parseExpr()
+		}
+	}
+
+	p.next()
+
+	elt := p.parseType()
+
+	return &ast.ArrayType{Lbrack: lbrack, Len: len, Elt: elt}
+}
+
 func (p *parser) tokPrec() int {
 	return p.tok.Precedence()
 }
@@ -799,6 +873,15 @@ func (p *parser) expect(tok token.Token) token.Pos {
 
 	p.next()
 	return pos
+}
+
+func (p *parser) expectClosing(tok token.Token, context string) token.Pos {
+	if p.tok != tok && p.tok == token.SEMICOLON && p.lit == "\n" {
+		p.error(p.pos, "missing ',' before new line in"+context)
+		p.next()
+	}
+
+	return p.expect(tok)
 }
 
 func (p *parser) expectSemi() {
@@ -853,7 +936,6 @@ func (p *parser) error(pos token.Pos, msg string) {
 	p.errors.Add(fpos, msg)
 }
 
-const maxNestLev = 1e4
 const maxNestLev = 1e2
 
 func incNestLev(p *parser) *parser {
