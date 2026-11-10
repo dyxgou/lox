@@ -1,10 +1,10 @@
 type es struct {}
 
 type s1 struct {
-  n1 int
-  n2 int
-  n3 int
-  n4 int
-  n5 int
+  f1 string
+  f2 int
+  f3 []int
+  f4 struct{ n1 int }
+  f5 []struct{ n1 int; n2 int }
 }
 

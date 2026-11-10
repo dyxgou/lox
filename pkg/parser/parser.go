@@ -949,7 +949,9 @@ func (p *parser) parseFieldDecl() *ast.Field {
 
 	name := p.parseIdent()
 	typ := p.parseType()
-	p.expectSemi()
+	if p.tok != token.RBRACE {
+		p.expectSemi()
+	}
 
 	return &ast.Field{Name: name, Type: typ}
 }
