@@ -13,12 +13,12 @@ type (
 		Body *BlockStmt
 	}
 
-	ValueDecl struct {
-		TokPos token.Pos   // position of the keyword
-		Tok    token.Token // VAR or CONST
-		Names  []*Ident    // value names; len(Names) > 0
-		Type   Expr        // value type
-		Values []Expr      // initial values or nil
+	GenDecl struct {
+		TokPos token.Pos
+		Tok    token.Token // IMPORT, TYPE, VAR, CONST
+		Lparen token.Pos   // position of '(' if any
+		Specs  []Spec
+		Rparen token.Pos // position of ')' if any
 	}
 )
 
@@ -28,19 +28,47 @@ func (d *BadDecl) End() token.Pos { return d.To }
 func (d *FuncDecl) Pos() token.Pos { return d.Name.Pos() }
 func (d *FuncDecl) End() token.Pos { return d.Type.Returns.End() }
 
-func (d *ValueDecl) Pos() token.Pos { return d.Names[0].Pos() }
-func (d *ValueDecl) End() token.Pos {
-	if n := len(d.Values); n > 0 {
-		return d.Values[n-1].End()
+func (d *GenDecl) Pos() token.Pos { return d.TokPos }
+func (d *GenDecl) End() token.Pos { return d.Rparen }
+
+func (d *FuncDecl) declNode() {}
+func (d *BadDecl) declNode()  {}
+func (d *GenDecl) declNode()  {}
+
+type (
+	Spec interface {
+		Node
+		specNode()
 	}
 
-	if d.Type != nil {
-		return d.Type.End()
+	// TypeSpec represents a 'type' decl
+	TypeSpec struct {
+		Name *Ident // name of the type
+		Type Expr   // *Ident, *ParenExpr, *SelectorExpr, *StarExpr, or any of the *XxxTypes
 	}
 
-	return d.Names[len(d.Names)-1].End()
+	ValueSpec struct {
+		Names  []*Ident // value names; len(Names) > 0
+		Type   Expr     // value type
+		Values []Expr   // initial values or nil
+	}
+)
+
+func (s *TypeSpec) Pos() token.Pos { return s.Name.Pos() }
+func (s *TypeSpec) End() token.Pos { return s.Type.End() }
+
+func (s *ValueSpec) Pos() token.Pos { return s.Names[0].Pos() }
+func (s *ValueSpec) End() token.Pos {
+	if n := len(s.Values); n > 0 {
+		return s.Values[n-1].End()
+	}
+
+	if s.Type != nil {
+		return s.Type.End()
+	}
+
+	return s.Names[len(s.Names)-1].End()
 }
 
-func (d *FuncDecl) declNode()  {}
-func (d *ValueDecl) declNode() {}
-func (d *BadDecl) declNode()   {}
+func (s *TypeSpec) specNode()  {}
+func (s *ValueSpec) specNode() {}

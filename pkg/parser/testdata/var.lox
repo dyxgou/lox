@@ -1,10 +1,14 @@
-var val1 int
+var (
+  name string = "Diego"
+  age int = 20
+  favLang string = "go"
+)
+
+var (
+  valid int = 0
+// invalid int = 1,
+// invalid2 int = 2,
+)
 
 func main() {
-  var name string
-  var age int = 20
-  var num1, num2, num3 int = 1, 2, 3
-
-  const num int
-  const num4 int = 50
 }

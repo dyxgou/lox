@@ -182,29 +182,63 @@ func (p *parser) end() token.Pos {
 	return p.scanner.End()
 }
 
-func (p *parser) parseDecl() (d ast.Decl) {
+type parseSpecFunc func(tok token.Token, iota int) ast.Spec
+
+func (p *parser) parseDecl() ast.Decl {
 	if p.trace {
 		defer un(trace(p, "Declaration"))
 	}
 
+	var f parseSpecFunc
 	switch p.tok {
 	case token.VAR, token.CONST:
-		d = p.parseValue(p.tok)
+		f = p.parseValueSpec
 	case token.FUNC:
-		d = p.parseFuncDecl()
+		return p.parseFuncDecl()
 	default:
 		p.errorExpected(p.pos, "declaration")
 		p.next()
 	}
 
-	return
+	return p.parseGenDecl(p.tok, f)
 }
 
-// TODO(parser): Implement a GenDecl for grouping decls like
-// import, type, var, const
+func (p *parser) parseGenDecl(tok token.Token, f parseSpecFunc) *ast.GenDecl {
+	if p.trace {
+		defer un(trace(p, "GenDecl("+tok.String()+")"))
+	}
 
-func (p *parser) parseValue(tok token.Token) *ast.ValueDecl {
 	pos := p.expect(tok)
+	list := make([]ast.Spec, 0, 4)
+	var lparen, rparen token.Pos
+	if p.tok == token.LPAREN {
+		lparen = p.expect(token.LPAREN)
+
+		for iota := 0; p.tok != token.RPAREN && p.tok != token.EOF; iota++ {
+			if p.tok == token.SEMICOLON && p.lit == "\n" {
+				p.next()
+				continue
+			}
+
+			list = append(list, f(p.tok, iota))
+		}
+
+		rparen = p.expect(token.RPAREN)
+		p.expectSemi()
+	} else {
+		list = append(list, f(p.tok, 0))
+	}
+
+	return &ast.GenDecl{
+		TokPos: pos,
+		Tok:    tok,
+		Lparen: lparen,
+		Specs:  list,
+		Rparen: rparen,
+	}
+}
+
+func (p *parser) parseValueSpec(tok token.Token, iota int) ast.Spec {
 	idents := p.parseIdentList()
 	typ := p.parseType()
 
@@ -221,9 +255,7 @@ func (p *parser) parseValue(tok token.Token) *ast.ValueDecl {
 
 	p.expectSemi()
 
-	return &ast.ValueDecl{
-		TokPos: pos,
-		Tok:    tok,
+	return &ast.ValueSpec{
 		Names:  idents,
 		Type:   typ,
 		Values: vals,
@@ -511,6 +543,11 @@ func (p *parser) parseExprList() []ast.Expr {
 	list = append(list, p.parseExpr())
 	for p.tok == token.COMMA {
 		p.next()
+		if p.tok == token.SEMICOLON && p.lit == "\n" {
+			p.errorExpected(p.pos, "expression")
+			continue
+		}
+
 		list = append(list, p.parseExpr())
 	}
 
