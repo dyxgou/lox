@@ -182,7 +182,7 @@ func (p *parser) end() token.Pos {
 	return p.scanner.End()
 }
 
-type parseSpecFunc func(tok token.Token, iota int) ast.Spec
+type parseSpecFunc func(tok token.Token) ast.Spec
 
 func (p *parser) parseDecl() ast.Decl {
 	if p.trace {
@@ -193,6 +193,8 @@ func (p *parser) parseDecl() ast.Decl {
 	switch p.tok {
 	case token.VAR, token.CONST:
 		f = p.parseValueSpec
+	case token.TYPE:
+		f = p.parseTypeSpec
 	case token.FUNC:
 		return p.parseFuncDecl()
 	default:
@@ -220,13 +222,13 @@ func (p *parser) parseGenDecl(tok token.Token, f parseSpecFunc) *ast.GenDecl {
 				continue
 			}
 
-			list = append(list, f(p.tok, iota))
+			list = append(list, f(p.tok))
 		}
 
 		rparen = p.expect(token.RPAREN)
 		p.expectSemi()
 	} else {
-		list = append(list, f(p.tok, 0))
+		list = append(list, f(p.tok))
 	}
 
 	return &ast.GenDecl{
@@ -238,7 +240,7 @@ func (p *parser) parseGenDecl(tok token.Token, f parseSpecFunc) *ast.GenDecl {
 	}
 }
 
-func (p *parser) parseValueSpec(tok token.Token, iota int) ast.Spec {
+func (p *parser) parseValueSpec(tok token.Token) ast.Spec {
 	idents := p.parseIdentList()
 	typ := p.parseType()
 
@@ -260,6 +262,17 @@ func (p *parser) parseValueSpec(tok token.Token, iota int) ast.Spec {
 		Type:   typ,
 		Values: vals,
 	}
+}
+
+func (p *parser) parseTypeSpec(tok token.Token) ast.Spec {
+	if p.trace {
+		defer un(trace(p, "TypeSpec"))
+	}
+
+	name := p.parseIdent()
+	typ := p.parseType()
+
+	return &ast.TypeSpec{Name: name, Type: typ}
 }
 
 func (p *parser) parseFuncDecl() *ast.FuncDecl {
@@ -440,6 +453,8 @@ func (p *parser) tryIdentOrType() (typ ast.Expr) {
 		typ = p.parseIdent()
 	case token.LBRACK:
 		typ = p.parseArrayType()
+	case token.STRUCT:
+		typ = p.parseStructType()
 	}
 
 	return
@@ -603,6 +618,8 @@ func (p *parser) parseUnaryExpr() (e ast.Expr) {
 		p.next()
 	case token.LBRACK:
 		e = p.parseArrayType()
+	case token.STRUCT:
+		e = p.parseStructType()
 	case token.LPAREN:
 		lparen := p.expect(token.LPAREN)
 		x := p.parseExpr()
@@ -621,8 +638,9 @@ func (p *parser) parseUnaryExpr() (e ast.Expr) {
 		e = &ast.UnaryExpr{Op: op, OpPos: pos, X: x}
 	}
 
-	if ar, ok := e.(*ast.ArrayType); ok {
-		e = p.parseLiteralValue(ar)
+	switch t := e.(type) {
+	case *ast.ArrayType, *ast.StructType:
+		e = p.parseLiteralValue(t)
 	}
 
 	return
@@ -895,6 +913,45 @@ func (p *parser) parseArrayType() *ast.ArrayType {
 	elt := p.parseType()
 
 	return &ast.ArrayType{Lbrack: lbrack, Len: len, Elt: elt}
+}
+
+func (p *parser) parseStructType() *ast.StructType {
+	if p.trace {
+		defer un(trace(p, "StructType"))
+	}
+
+	pos := p.expect(token.STRUCT)
+	lbrace := p.expect(token.LBRACE)
+	if p.tok == token.SEMICOLON && p.lit == "\n" {
+		p.next()
+	}
+
+	list := make([]*ast.Field, 0, 2)
+	for p.tok == token.IDENT || p.tok == token.LPAREN {
+		list = append(list, p.parseFieldDecl())
+	}
+	rbrace := p.expect(token.RBRACE)
+
+	return &ast.StructType{
+		Struct: pos,
+		Fields: &ast.FieldList{
+			Opening: lbrace,
+			List:    list,
+			Closing: rbrace,
+		},
+	}
+}
+
+func (p *parser) parseFieldDecl() *ast.Field {
+	if p.trace {
+		defer un(trace(p, "FieldDecl"))
+	}
+
+	name := p.parseIdent()
+	typ := p.parseType()
+	p.expectSemi()
+
+	return &ast.Field{Name: name, Type: typ}
 }
 
 func (p *parser) tokPrec() int {

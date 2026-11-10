@@ -59,6 +59,11 @@ type (
 		Elt    Expr      // element type
 	}
 
+	StructType struct {
+		Struct token.Pos  // position of the 'struct' keyword
+		Fields *FieldList // list of field declarations
+	}
+
 	CompositeLit struct {
 		Type   Expr      // literal type or nil
 		Lbrace token.Pos // position of '{'
@@ -96,6 +101,9 @@ func (e *ParenExpr) End() token.Pos { return e.Rparen }
 func (e *ArrayType) Pos() token.Pos { return e.Lbrack }
 func (e *ArrayType) End() token.Pos { return e.Elt.End() }
 
+func (e *StructType) Pos() token.Pos { return e.Struct }
+func (e *StructType) End() token.Pos { return e.Fields.End() }
+
 func (e *CompositeLit) Pos() token.Pos { return e.Lbrace }
 func (e *CompositeLit) End() token.Pos { return e.Rbrace }
 
@@ -109,4 +117,5 @@ func (*BasicLit) exprNode()   {}
 func (*ParenExpr) exprNode()  {}
 
 func (*ArrayType) exprNode()    {}
+func (*StructType) exprNode()   {}
 func (*CompositeLit) exprNode() {}

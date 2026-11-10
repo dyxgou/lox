@@ -105,6 +105,8 @@ const (
 	RETURN
 
 	SWITCH
+	STRUCT
+	TYPE
 	VAR
 	keyword_end
 )
@@ -195,6 +197,8 @@ var tokens = [...]string{
 	RETURN: "return",
 
 	SWITCH: "switch",
+	STRUCT: "struct",
+	TYPE:   "type",
 	VAR:    "var",
 }
 

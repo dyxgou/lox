@@ -13,6 +13,7 @@ func TestIsIdentifier(t *testing.T) {
 		{"SpaceSuffix", "foo ", false},
 		{"Number", "123", false},
 		{"Keyword", "func", false},
+		{"Struct", "struct", false},
 		{"Range", "range", false},
 
 		{"LetterASCII", "hello", true},

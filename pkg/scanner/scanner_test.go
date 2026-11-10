@@ -50,6 +50,11 @@ var tokens = [...]ExpTok{
 	{tok: token.IMAG, lit: "3.14159265i"},
 	{tok: token.CHAR, lit: "'a'"},
 	{tok: token.STRING, lit: "`Hello world`"},
+	// structs
+	{tok: token.STRUCT, lit: "struct"},
+	{tok: token.IDENT, lit: "s1"},
+	{tok: token.LBRACE, lit: "{"},
+	{tok: token.RBRACE, lit: "}"},
 
 	// Operators and delimiters
 	{tok: token.ADD, lit: "+"},
