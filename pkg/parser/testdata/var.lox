@@ -4,11 +4,5 @@ var (
   favLang string = "go"
 )
 
-var (
-  valid int = 0
-// invalid int = 1,
-// invalid2 int = 2,
-)
-
 func main() {
 }
