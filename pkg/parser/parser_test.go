@@ -59,9 +59,10 @@ func TestParseSource(t *testing.T) {
 
 		t.Run(name, func(t *testing.T) {
 			file.Init(name, 1, len(src))
-			f, err := parser.ParseFile(&file, src, parser.SkipPackage|parser.TraceMode)
+			mode := parser.SkipPackage | parser.TraceMode
+			f, err := parser.ParseFile(&file, src, mode)
 
-			if f != nil {
+			if mode&parser.TraceMode != 0 && f != nil {
 				t.Logf("file: %s", parser.Print(f))
 			}
 
