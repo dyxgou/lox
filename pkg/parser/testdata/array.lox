@@ -1,4 +1,5 @@
 func main() {
-  arr1 := []type{}
-  arr2 := [5]type{1,2,3,4,5}
+  earr := []int{}
+  ints := []int{1,2,3,4,5}
+  ints2 := [5]int{1,2,3,4,5}
 }
