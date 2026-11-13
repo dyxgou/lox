@@ -19,6 +19,11 @@ type (
 		Params  *FieldList // func parameters or nil
 		Returns *FieldList // func return types or nil
 	}
+
+	Comment struct {
+		Slash token.Pos // position of '//'
+		Text  string
+	}
 )
 
 func (f *Field) Pos() token.Pos {

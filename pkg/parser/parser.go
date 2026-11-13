@@ -28,6 +28,9 @@ type parser struct {
 	tok token.Token
 	lit string
 
+	// comments
+	comments []*ast.Comment
+
 	// nestLev is used to track the depth level in the recursion parsing
 	nestLev int
 
@@ -51,6 +54,8 @@ func (p *parser) init(file *token.File, src []byte, mode Mode) {
 
 	p.mode = mode
 	p.trace = mode&TraceMode == 1
+
+	p.comments = make([]*ast.Comment, 0, 2)
 
 	p.scanner.Init(p.file, src, eh)
 	p.next()
@@ -89,6 +94,11 @@ func un(p *parser) {
 
 func (p *parser) next() {
 	p.pos, p.tok, p.lit = p.scanner.Scan()
+
+	for p.tok == token.COMMENT && p.tok != token.EOF {
+		p.comments = append(p.comments, &ast.Comment{Slash: p.pos, Text: p.lit})
+		p.pos, p.tok, p.lit = p.scanner.Scan()
+	}
 }
 
 var declStart = map[token.Token]bool{
