@@ -70,6 +70,24 @@ type (
 		Elts   []Expr
 		Rbrace token.Pos // position of '}'
 	}
+
+	// IndexExpr represents an expression followed by an index
+	IndexExpr struct {
+		X      Expr
+		Lbrack token.Pos
+		Index  Expr
+		Rbrack token.Pos
+	}
+
+	SliceExpr struct {
+		X      Expr
+		Lbrack token.Pos
+		Low    Expr
+		High   Expr
+		Max    Expr
+		Slice3 bool
+		Rbrack token.Pos
+	}
 )
 
 func (e *BadExpr) Pos() token.Pos { return e.From }
@@ -107,6 +125,12 @@ func (e *StructType) End() token.Pos { return e.Fields.End() }
 func (e *CompositeLit) Pos() token.Pos { return e.Lbrace }
 func (e *CompositeLit) End() token.Pos { return e.Rbrace }
 
+func (e *IndexExpr) Pos() token.Pos { return e.X.Pos() }
+func (e *IndexExpr) End() token.Pos { return e.Rbrack }
+
+func (e *SliceExpr) Pos() token.Pos { return e.X.Pos() }
+func (e *SliceExpr) End() token.Pos { return e.Rbrack }
+
 func (*File) exprNode()       {}
 func (*Ident) exprNode()      {}
 func (*BadExpr) exprNode()    {}
@@ -119,3 +143,5 @@ func (*ParenExpr) exprNode()  {}
 func (*ArrayType) exprNode()    {}
 func (*StructType) exprNode()   {}
 func (*CompositeLit) exprNode() {}
+func (*IndexExpr) exprNode()    {}
+func (*SliceExpr) exprNode()    {}

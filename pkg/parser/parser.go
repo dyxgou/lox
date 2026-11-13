@@ -638,12 +638,26 @@ func (p *parser) parseUnaryExpr() (e ast.Expr) {
 		e = &ast.UnaryExpr{Op: op, OpPos: pos, X: x}
 	}
 
-	switch t := e.(type) {
-	case *ast.ArrayType, *ast.StructType:
-		e = p.parseLiteralValue(t)
+	return p.parsePrimaryExpr(e)
+}
+
+// parsePrimaryExpr parses expression which suffixes are other expressions
+func (p *parser) parsePrimaryExpr(x ast.Expr) ast.Expr {
+	if p.trace {
+		defer un(trace(p, "PrimaryExpr"))
 	}
 
-	return
+	switch p.tok {
+	case token.LBRACK:
+		x = p.parseIndexOrSlice(x)
+	default:
+		switch x.(type) {
+		case *ast.ArrayType, *ast.StructType:
+			x = p.parseLiteralValue(x)
+		}
+	}
+
+	return x
 }
 
 func (p *parser) parseIfStmt() *ast.IfStmt {
@@ -862,6 +876,69 @@ func (p *parser) parseLiteralValue(typ ast.Expr) *ast.CompositeLit {
 
 	rbrace := p.expectClosing(token.RBRACE, "composite literal")
 	return &ast.CompositeLit{Type: typ, Lbrace: lbrace, Elts: elts, Rbrace: rbrace}
+}
+
+func (p *parser) parseIndexOrSlice(x ast.Expr) ast.Expr {
+	if p.trace {
+		defer un(trace(p, "IndexOrSlice"))
+	}
+
+	lbrack := p.expect(token.LBRACK)
+	if p.tok == token.RBRACK {
+		p.errorExpected(p.pos, "index expr")
+		rbrack := p.pos
+		p.next()
+		return &ast.IndexExpr{
+			X:      x,
+			Lbrack: lbrack,
+			Index:  &ast.BadExpr{From: lbrack, To: rbrack},
+			Rbrack: rbrack,
+		}
+	}
+
+	var index [3]ast.Expr
+	colons := make([]token.Pos, 0, 3)
+	for i := 0; p.tok != token.RBRACK && p.tok != token.EOF; {
+		if p.tok == token.COLON {
+			colons = append(colons, p.pos)
+			p.next()
+			continue
+		}
+
+		ex := p.parseExpr()
+		index[i] = ex
+		i++
+	}
+
+	rbrack := p.expect(token.RBRACK)
+
+	if cs := len(colons); cs > 0 {
+		slice3 := false
+		if cs == 2 {
+			slice3 = true
+
+			if index[1] == nil {
+				p.error(colons[0], "middle index required in 3-index slice")
+				index[1] = &ast.BadExpr{From: colons[0] + 1, To: colons[1]}
+			}
+			if index[2] == nil {
+				p.error(colons[0], "final index required in 3-index slice")
+				index[2] = &ast.BadExpr{From: colons[0] + 1, To: colons[1]}
+			}
+		}
+
+		return &ast.SliceExpr{
+			X:      x,
+			Low:    index[0],
+			High:   index[1],
+			Max:    index[2],
+			Slice3: slice3,
+			Lbrack: lbrack,
+			Rbrack: rbrack,
+		}
+	}
+
+	return &ast.IndexExpr{X: x, Index: index[0], Lbrack: lbrack, Rbrack: rbrack}
 }
 
 func (p *parser) parseElementList() []ast.Expr {
